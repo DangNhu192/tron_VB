@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import http from 'node:http';
 import { createRequire } from 'node:module';
+import { readCsvInSheetTab } from '../js/services/sheet-transport.js';
 
 const require = createRequire(import.meta.url);
 let playwright;
@@ -24,7 +25,8 @@ const base = `http://127.0.0.1:${server.address().port}`;
 let browser;
 try {
   browser = await playwright.chromium.launch({ headless: true, channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome' });
-  const page = await browser.newPage({ viewport: { width: 1366, height: 960 }, acceptDownloads: true });
+  const context = await browser.newContext({ viewport: { width: 1366, height: 960 }, acceptDownloads: true });
+  const page = await context.newPage();
   const errors = [];
   page.on('pageerror', err => errors.push(err.message));
   await page.addInitScript(() => {
@@ -123,6 +125,75 @@ try {
   assert.equal(await page.locator('#dataPreviewModal').evaluate(el => el.classList.contains('is-open')), false, 'Escape closes preview');
   assert.equal(await page.evaluate(() => document.activeElement.id), 'processBtn', 'Closing dialog restores focus');
 
+  // Google Sheets integration: validate link metadata, fresh reads and safe reloads.
+  let sheetVersion = 1;
+  let sheetError = false;
+  let sheetRequests = 0;
+  let privateSessionReady = false;
+  await page.context().route('https://docs.google.com/**', async route => {
+    const url = new URL(route.request().url());
+    const headers = { 'access-control-allow-origin': base, 'access-control-allow-credentials': 'true' };
+    if (url.pathname.endsWith('/htmlview') || url.pathname.endsWith('/edit')) {
+      await route.fulfill({ status: 200, contentType: 'text/html', headers, body: '<title>Sheet kiểm thử - Google Sheets</title>' });
+      return;
+    }
+    sheetRequests++;
+    const authenticatedTab = privateSessionReady && route.request().frame().url().startsWith('https://docs.google.com/');
+    if (authenticatedTab) assert.ok((await route.request().allHeaders()).cookie?.includes('autodoc_test_session=authorized'));
+    await route.fulfill({ status: authenticatedTab ? 200 : sheetError || sheetRequests === 1 ? 403 : 200,
+      contentType: 'text/csv; charset=utf-8', headers,
+      body: `Họ tên,Mã,Check DL\nDữ liệu mới ${sheetVersion},00123,TRUE` });
+  });
+  await page.locator('[data-view="viewData"]').click();
+  await page.locator('#dataSrcLinkBtn').click();
+  await page.locator('#dataLibNameInput').fill('Sheet trực tiếp kiểm thử');
+  await page.locator('#dataLinkInput').fill('https://docs.google.com/spreadsheets/d/live_test_sheet/edit#gid=42');
+  await page.locator('#dataLinkImportBtn').click();
+  await page.waitForFunction(async () => Object.values(await (await import('/js/core/storage.js')).DataManager.list()).some(item => item.type === 'google_sheets'));
+  const liveSource = (await libraryCopies()).find(item => item.type === 'google_sheets');
+  assert.equal(liveSource.data ?? null, null, 'Only Sheet link metadata is persisted');
+  sheetVersion = 2;
+  await page.locator('[data-view="viewWorkspace"]').click();
+  await page.locator('#dataSourceLinkBtn').click();
+  await page.locator('#dataLibSelect').selectOption(liveSource.id);
+  await page.locator('#processBtn').click();
+  await page.locator('#dataPreviewModal.is-open').waitFor();
+  assert.equal(await page.locator('.preview-input[data-col="Họ tên"]').inputValue(), 'Dữ liệu mới 2', 'Opening preview rereads the remote Sheet');
+  assert.ok(await page.locator('#reloadSheetPreviewBtn').isVisible());
+  sheetVersion = 3;
+  await page.locator('#reloadSheetPreviewBtn').click();
+  await page.waitForFunction(() => document.querySelector('.preview-input[data-col="Họ tên"]').value === 'Dữ liệu mới 3');
+  assert.ok((await page.locator('#sheetFreshness').textContent()).includes('Đọc từ Google Sheets lúc'));
+  await page.locator('.preview-input[data-col="Họ tên"]').fill('Chỉnh sửa chưa lưu');
+  const beforeBlockedReload = sheetRequests;
+  await page.locator('#reloadSheetPreviewBtn').click();
+  assert.equal(sheetRequests, beforeBlockedReload, 'Unsaved local edits block a destructive reload');
+  await page.locator('#savePreviewCopyBtn').click();
+  await page.waitForFunction(() => !document.getElementById('savePreviewCopyBtn').disabled);
+  sheetVersion = 4;
+  await page.locator('#reloadSheetPreviewBtn').click();
+  await page.waitForFunction(() => document.querySelector('.preview-input[data-col="Họ tên"]').value === 'Dữ liệu mới 4');
+  sheetError = true;
+  await page.locator('#reloadSheetPreviewBtn').click();
+  await page.waitForFunction(() => !document.getElementById('reloadSheetPreviewBtn').disabled);
+  assert.equal(await page.locator('.preview-input[data-col="Họ tên"]').inputValue(), 'Dữ liệu mới 4', 'Failed refresh preserves the current preview');
+  const sessionPage = await page.context().newPage();
+  await page.context().addCookies([{ name: 'autodoc_test_session', value: 'authorized', domain: 'docs.google.com', path: '/', secure: true, sameSite: 'Lax' }]);
+  await sessionPage.goto('https://docs.google.com/spreadsheets/u/2/d/live_test_sheet/edit');
+  await page.exposeFunction('__readSheetSession', sheet => sessionPage.evaluate(readCsvInSheetTab, sheet));
+  await page.evaluate(() => {
+    window.chrome ||= {};
+    window.chrome.tabs = { query: async () => [{ id: 77, active: true, url: 'https://docs.google.com/spreadsheets/u/2/d/live_test_sheet/edit' }] };
+    window.chrome.scripting = { executeScript: async options => [{ result: await window.__readSheetSession(options.args[0]) }] };
+  });
+  privateSessionReady = true;
+  sheetVersion = 5;
+  await page.locator('#reloadSheetPreviewBtn').click();
+  await page.waitForFunction(() => document.querySelector('.preview-input[data-col="Họ tên"]').value === 'Dữ liệu mới 5');
+  await sessionPage.close();
+  await page.evaluate(() => { delete window.chrome.scripting; delete window.chrome.tabs; });
+  await page.keyboard.press('Escape');
+
   fs.mkdirSync('outputs/ui-review', { recursive: true });
   for (const [file, width] of [['app.html', 1366], ['app.html', 768], ['sidepanel.html', 400], ['sidepanel.html', 320]]) {
     await page.setViewportSize({ width, height: 960 });
@@ -153,7 +224,7 @@ try {
     await page.screenshot({ path: `outputs/ui-review/preview-${file}-${width}.png`, animations: 'disabled' });
   }
   assert.deepEqual(errors, [], 'No browser runtime errors');
-  console.log('PASS: one picker per click/keyboard, cancel/fallback, live edits, original pasted text, persistent selection, filtered single export, explicit nonduplicating saved copies, empty state, keyboard navigation and dialogs, 16 responsive view checks, 4 preview layouts and both themes.');
+  console.log('PASS: picker/cancel, preview edits/filtering/export, safe saved copies, keyboard/dialogs, live Google Sheets link and refresh, 16 responsive views, 4 preview layouts and both themes.');
 } finally {
   await browser?.close();
   await new Promise(resolve => server.close(resolve));

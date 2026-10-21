@@ -98,6 +98,7 @@ function normalizeRowsForWord(rows) {
 let currentPreviewRawData = [];
 const excludedPreviewRows = new Set();
 let previewCopyId = null;
+let savedPreviewSnapshot = null;
 let currentExcelWorkbook = null;
 let fieldTransformers = {};
 let isOnlyErrorsFilter = false;
@@ -133,6 +134,7 @@ function refreshPreviewTable() {
 
 function showPreviewModal(headers, rowsData) {
   previewCopyId = null;
+  savedPreviewSnapshot = null;
   excludedPreviewRows.clear();
   isOnlyErrorsFilter = false;
   const search = document.getElementById('previewSearchInput');
@@ -145,6 +147,14 @@ function showPreviewModal(headers, rowsData) {
   if (badge) badge.style.display = 'none';
   const modal = document.getElementById('dataPreviewModal');
   if (modal) modal.classList.add('is-open');
+  const live = Boolean(activeDataSourceOrigin?.isGoogleSheet);
+  const reload = document.getElementById('reloadSheetPreviewBtn');
+  const freshness = document.getElementById('sheetFreshness');
+  if (reload) reload.style.display = live ? 'inline-flex' : 'none';
+  if (freshness) {
+    freshness.style.display = live ? 'inline' : 'none';
+    freshness.textContent = live ? `Đọc từ Google Sheets lúc ${new Date(activeDataSourceOrigin.fetchedAt).toLocaleTimeString('vi-VN')}` : '';
+  }
 }
 
 // Save an explicit library copy; exporting must not overwrite the original file.
@@ -152,13 +162,47 @@ async function savePreviewCopy() {
   syncInputsToRawData(getPreviewState());
   if (!currentPreviewRawData.length) return;
   previewCopyId ||= 'data_copy_' + Date.now();
+  const snapshot = JSON.stringify(currentPreviewRawData);
   await DataManager.save(previewCopyId, {
     name: (activeDataSourceOrigin?.name || 'Dữ liệu') + ' (Bản sao chỉnh sửa)',
     type: 'local',
-    data: JSON.parse(JSON.stringify(currentPreviewRawData))
+    data: JSON.parse(snapshot)
   });
+  savedPreviewSnapshot = snapshot;
   await renderDataList(DataManager);
   showToast('Đã lưu bản sao dữ liệu vào thư viện. File gốc được giữ nguyên.', 'success');
+}
+
+async function reloadSheetPreview() {
+  const origin = activeDataSourceOrigin;
+  if (!origin?.isGoogleSheet || !origin.link) return;
+  syncInputsToRawData(getPreviewState());
+  const before = JSON.stringify(currentPreviewRawData);
+  if (isDataModified(origin.originalData, currentPreviewRawData) && savedPreviewSnapshot !== before) {
+    showToast('Bạn đã chỉnh sửa dữ liệu xem trước. Hãy lưu bản sao trước khi cập nhật từ Google Sheets.', 'warning');
+    return;
+  }
+  const button = document.getElementById('reloadSheetPreviewBtn');
+  const confirm = document.getElementById('confirmExportBtn');
+  button.disabled = true;
+  if (confirm) confirm.disabled = true;
+  try {
+    const data = await GoogleSheetsManager.importLinkSheet(origin.link, origin.sheetName);
+    if (activeDataSourceOrigin !== origin || !document.getElementById('dataPreviewModal').classList.contains('is-open')) return;
+    if (JSON.stringify(currentPreviewRawData) !== before) {
+      showToast('Dữ liệu vừa được chỉnh sửa trong lúc tải. Giữ nguyên bản xem trước để tránh mất thay đổi.', 'warning');
+      return;
+    }
+    origin.originalData = JSON.parse(JSON.stringify(data));
+    origin.fetchedAt = Date.now();
+    showPreviewModal(Object.keys(data[0]), data);
+    showToast(`Đã lấy dữ liệu mới từ Google Sheets (${data.length} dòng).`, 'success');
+  } catch (err) {
+    showToast(`Chưa cập nhật được Google Sheets: ${err.message}. Bản xem trước được giữ nguyên.`, 'error');
+  } finally {
+    button.disabled = false;
+    if (confirm) confirm.disabled = getEditedData().length === 0;
+  }
 }
 
 function switchSource(source) {
@@ -1183,6 +1227,7 @@ async function initApp() {
 
   const exportPreviewDataBtn = document.getElementById('exportPreviewDataBtn');
   const savePreviewCopyBtn = document.getElementById('savePreviewCopyBtn');
+  document.getElementById('reloadSheetPreviewBtn')?.addEventListener('click', reloadSheetPreview);
   if (savePreviewCopyBtn) {
     savePreviewCopyBtn.addEventListener('click', async () => {
       savePreviewCopyBtn.disabled = true;
@@ -1211,6 +1256,10 @@ async function initApp() {
       refreshPreviewTable,
       async (rowIdx, btnExportSingle) => {
         if (!onConfirmExportCallback) return;
+        if (document.getElementById('reloadSheetPreviewBtn')?.disabled) {
+          showToast('Đang cập nhật Google Sheets. Hãy đợi tải xong trước khi xuất.', 'info');
+          return;
+        }
         syncInputsToRawData(getPreviewState());
         btnExportSingle.style.opacity = '0.5';
         showToast(`Đang tạo file đơn cho dòng ${rowIdx + 1}...`, 'info');
@@ -1226,6 +1275,10 @@ async function initApp() {
   const confirmExportBtn = document.getElementById('confirmExportBtn');
   if (confirmExportBtn) {
     confirmExportBtn.addEventListener('click', async () => {
+      if (document.getElementById('reloadSheetPreviewBtn')?.disabled) {
+        showToast('Đang cập nhật Google Sheets. Hãy đợi tải xong trước khi xuất.', 'info');
+        return;
+      }
       syncInputsToRawData(getPreviewState());
       const editedData = getEditedData();
       if (editedData.length === 0) {
@@ -1339,6 +1392,7 @@ async function initApp() {
         const dataFileInput = document.getElementById('excelData');
         const dataFile = dataFileInput ? dataFileInput.files[0] : null;
         let rawData = [];
+        let loadedFromSheet = false;
 
         const srcDataLinkBtnEl = document.getElementById('dataSourceLinkBtn');
         const isDataLinkSource = srcDataLinkBtnEl ? srcDataLinkBtnEl.classList.contains('active') : false;
@@ -1372,6 +1426,7 @@ async function initApp() {
           } else if (item.link || item.type === 'google_sheets') {
             if (ui.status) ui.status.innerText = `Đang tải dữ liệu "${item.name}" từ Google Sheet (Sheet: ${item.sheetName || 'Mặc định'})...`;
             rawData = await GoogleSheetsManager.importLinkSheet(item.link, item.sheetName);
+            loadedFromSheet = true;
           } else {
             throw new Error('Dữ liệu trong thư viện không hợp lệ.');
           }
@@ -1407,6 +1462,9 @@ async function initApp() {
             : varList);
 
         activeDataSourceOrigin = {
+          link: selectedDataItem?.link || '',
+          isGoogleSheet: loadedFromSheet,
+          fetchedAt: loadedFromSheet ? Date.now() : null,
           type: isDataLinkSource ? (selectedDataItem ? selectedDataItem.type : 'local') : (dataFile ? 'input_file' : 'memory'),
           id: (isDataLinkSource && selectedDataItem) ? selectedDataItem.id : null,
           name: (isDataLinkSource && selectedDataItem) ? selectedDataItem.name : (dataFile ? dataFile.name : 'Dữ liệu hiện hành'),

@@ -2,6 +2,7 @@
 
 import { extractTableDataFromDocx } from '../core/docx-xml.js';
 import { readExcelWorkbook } from '../core/xlsx-text.js';
+import { fetchSheetCsv, parseSheetLink } from './sheet-transport.js';
 
 function getXLSX() {
   if (typeof XLSX !== 'undefined') return XLSX;
@@ -24,10 +25,7 @@ export const GoogleSheetsManager = {
 
   extractGid(url) {
     try {
-      if (!url) return '0';
-      if (url.includes('gid=')) {
-        return new URL(url).searchParams.get('gid') || '0';
-      }
+      return parseSheetLink(url).gid || '0';
     } catch(e) {}
     return '0';
   },
@@ -41,16 +39,19 @@ export const GoogleSheetsManager = {
       if (userMatch) userPrefix = `/u/${userMatch[1]}`;
 
       let fetchUrl = '';
-      if (url.includes('spreadsheets/d/')) {
-        fetchUrl = `https://docs.google.com${userPrefix}/spreadsheets/d/${fileId}/htmlview`;
+      if (url.includes('/spreadsheets/')) {
+        const sheet = parseSheetLink(url);
+        if (sheet.published) return null;
+        const prefix = sheet.account && /^\d+$/.test(sheet.account) ? `u/${sheet.account}/` : '';
+        fetchUrl = `https://docs.google.com/spreadsheets/${prefix}d/${sheet.id}/htmlview`;
       } else if (url.includes('document/d/')) {
         fetchUrl = `https://docs.google.com${userPrefix}/document/d/${fileId}/htmlview`;
       } else {
         fetchUrl = `https://drive.google.com/file/d/${fileId}/view`;
       }
 
-      const res = await fetch(fetchUrl, { credentials: 'include' });
-      if (!res.ok) return null;
+      const res = await fetch(fetchUrl, { credentials: 'include', cache: 'no-store', signal: AbortSignal.timeout(6000) });
+      if (!res.ok || (res.url && new URL(res.url).hostname === 'accounts.google.com')) return null;
       const html = await res.text();
       const ogMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]+)"/i) 
                    || html.match(/<meta\s+content="([^"]+)"\s+property="og:title"/i);
@@ -67,40 +68,10 @@ export const GoogleSheetsManager = {
     return null;
   },
 
-  async importLinkSheet(url, sheetName) {
-    const fileId = this.extractFileId(url);
-    if (!fileId) throw new Error("Link Google Sheet không hợp lệ hoặc thiếu ID.");
-
-    let userPrefix = '';
-    const userMatch = url.match(/\/u\/(\d+)\//);
-    if (userMatch) {
-      userPrefix = `/u/${userMatch[1]}`;
-    }
-
-    let exportUrl = `https://docs.google.com${userPrefix}/spreadsheets/d/${fileId}/export?format=csv`;
-    if (sheetName) {
-      exportUrl += `&sheet=${encodeURIComponent(sheetName)}`;
-    } else {
-      const gid = this.extractGid(url);
-      if (gid && gid !== '0') {
-        exportUrl += `&gid=${gid}`;
-      }
-    }
-
-    const res = await fetch(exportUrl, { credentials: 'include' });
-    if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        throw new Error("Không có quyền truy cập Google Sheet. Hãy kiểm tra bạn đã đăng nhập đúng tài khoản Google quản lý file trên trình duyệt, hoặc mở quyền 'Bất kỳ ai có liên kết'.");
-      }
-      if (res.status === 404) {
-        throw new Error("Không tìm thấy Google Sheet. Vui lòng kiểm tra lại liên kết.");
-      }
-      throw new Error(`Lỗi tải dữ liệu Google Sheet (HTTP ${res.status})`);
-    }
-
-    const csvText = await res.text();
+  async importLinkSheet(url, sheetName = '') {
+    const csvText = await fetchSheetCsv(url, sheetName);
     const XLSXLib = getXLSX();
-    const workbook = XLSXLib.read(csvText, { type: 'string' });
+    const workbook = XLSXLib.read(csvText, { type: 'string', raw: true });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
     let rawData = XLSXLib.utils.sheet_to_json(sheet, { defval: "" });
 
@@ -269,9 +240,9 @@ export function initGoogleDrivePickerListeners(onSelected) {
     if (!pickerWindowId) return;
     if (changeInfo.status === 'complete' && tab.url) {
       const isDrive = tab.url.includes('drive.google.com');
-      const isDocs = tab.url.includes('docs.google.com/spreadsheets/d/') || tab.url.includes('docs.google.com/document/d/');
+      const isDocs = /^https:\/\/docs\.google\.com\/(?:spreadsheets|document)\/(?:u\/\d+\/)?d\//.test(tab.url);
       
-      if (isDrive || isDocs && chrome.scripting) {
+      if ((isDrive || isDocs) && chrome.scripting) {
         chrome.scripting.executeScript({
           target: { tabId: tabId },
           func: (pType) => {

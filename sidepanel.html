@@ -415,12 +415,12 @@
             </div>
 
             <div class="form-group">
-              <label for="dataSheetNameInput">Tên Trang Tính (Sheet Name - để trống sẽ lấy sheet 1):</label>
+              <label for="dataSheetNameInput">Tên trang tính (để trống: dùng gid trong link hoặc trang đầu tiên):</label>
               <input type="text" id="dataSheetNameInput" class="config-input" placeholder="VD: Trang tính1">
             </div>
 
             <div class="form-hint" style="margin-top: -6px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-muted);">
-              💡 Tự động sử dụng phiên tài khoản Google đã đăng nhập trên trình duyệt. Luôn nạp dữ liệu mới nhất trực tiếp khi tạo văn bản.
+              Lưu liên kết trực tiếp, không lưu bản dữ liệu cố định. Mỗi lần mở xem trước hoặc bấm Cập nhật Google Sheets sẽ đọc lại dữ liệu. Với Sheet riêng tư, hãy mở đúng Sheet bằng tài khoản có quyền trên trình duyệt này.
             </div>
 
             <button type="button" id="dataLinkImportBtn" class="btn btn-primary" style="width: 100%; margin-top: 6px;">
@@ -659,6 +659,8 @@
             Xuất file Excel
           </button>
           <button type="button" id="savePreviewCopyBtn" class="btn btn-secondary" style="font-size: 0.78rem;" title="Lưu toàn bộ dữ liệu xem trước vào thư viện, không ghi đè file gốc">Lưu bản sao dữ liệu</button>
+          <button type="button" id="reloadSheetPreviewBtn" class="btn btn-secondary" style="display:none; font-size: 0.78rem;" title="Đọc lại dữ liệu hiện tại từ Google Sheets">Cập nhật Google Sheets</button>
+          <span id="sheetFreshness" class="note" role="status" aria-live="polite" style="display:none;"></span>
         </div>
 
         <div class="preview-table-wrapper" id="previewTableWrapper">

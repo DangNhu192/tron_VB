@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 
 const testSuites = [
+  { name: 'Google Sheets Live Access & Session Fallback', script: 'tools/test_google_sheets.mjs' },
   { name: 'XLSX Unicode Source Preservation', script: 'tools/test_xlsx_text.mjs' },
   { name: 'File Structure & Charset Verification', script: 'tools/verify_all.mjs' },
   { name: 'Unicode Normalization Regression', script: 'tools/test_unicode_normalization.mjs' },

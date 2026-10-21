@@ -45,6 +45,9 @@ Cancel closes the picker without reopening it. Preview precedes export.
 Selection survives filtering; select-all affects visible rows only.
 Export never overwrites source data. Saving preview edits is an explicit library
 copy action; repeated saves in the same preview update that copy.
+Live Sheet previews display the last successful read time and provide an explicit
+refresh action. Refresh failures or unsaved edits must never silently replace
+the current data.
 
 ## Do's and Don'ts
 Keep app.html and sidepanel.html consistent. Preserve imported Unicode.
