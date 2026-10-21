@@ -4,9 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AutoDoc Pro — Trợ lý Xuất Văn Bản</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/app.css">
   <script src="libs/xlsx.full.min.js"></script>
   <script src="libs/pizzip.min.js"></script>
@@ -118,7 +115,7 @@
           <div class="step-header">
             <div class="step-badge">1</div>
             <div>
-              <div class="step-title-text">Chọn Mẫu Văn Bản Word</div>
+              <div class="step-title-text">Chọn mẫu văn bản Word</div>
               <div class="step-desc-text">Mẫu file .docx chuẩn thể thức chứa các biến tag {ten_bien}</div>
             </div>
           </div>
@@ -183,7 +180,7 @@
           <div class="step-header">
             <div class="step-badge">2</div>
             <div>
-              <div class="step-title-text">Chọn Nguồn Dữ Liệu</div>
+              <div class="step-title-text">Chọn nguồn dữ liệu</div>
               <div class="step-desc-text">File Excel, CSV hoặc Google Sheets chứa các cột tương ứng</div>
             </div>
           </div>
@@ -214,7 +211,7 @@
                     <line x1="15" y1="3" x2="15" y2="21"></line>
                   </svg>
                 </div>
-                <div class="fd-hint">Kéo thả file Excel (.xlsx, .xls, .csv) hoặc bấm để chọn</div>
+                <div class="fd-hint">Chọn hoặc kéo thả Excel, CSV, bảng Word</div>
                 <div class="fd-name" id="excelDataName"></div>
               </div>
             </div>
@@ -244,12 +241,12 @@
           <div class="hero-action-card">
             <div class="action-row">
               <div class="action-config-col">
-                <div style="flex: 2;">
+                <div class="export-name-field">
                   <label for="fileNameFormat">Quy tắc đặt tên file xuất:</label>
                   <input type="text" id="fileNameFormat" class="config-input" placeholder="VD: [So_GPMT]_[Ten_Du_An]">
                   <div class="note">Dùng <b>[Tên_Cột]</b> để chèn dữ liệu tự động. Ví dụ: <i>[So_GPMT]_[Ten_Co_So]</i></div>
                 </div>
-                <div style="flex: 1.2; min-width: 170px;">
+                <div>
                   <label for="batchExportModeSelect">Chế độ xuất hàng loạt:</label>
                   <select id="batchExportModeSelect" class="config-select">
                     <option value="merged" selected>📄 Gộp chung 1 file duy nhất (.docx)</option>
@@ -257,11 +254,10 @@
                     <option value="zip">📦 Đóng gói file nén (.zip)</option>
                   </select>
                 </div>
-                <div style="flex: 0.9; min-width: 130px;">
+                <div>
                   <label for="exportFormatSelect">Định dạng xuất:</label>
-                  <select id="exportFormatSelect" class="config-select">
+                  <select id="exportFormatSelect" class="config-select" disabled title="Hiện hỗ trợ xuất Word chuẩn Unicode">
                     <option value="docx" selected>Word (.docx)</option>
-                    <option value="pdf">PDF (.pdf)</option>
                   </select>
                 </div>
               </div>
@@ -271,7 +267,7 @@
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                   </svg>
-                  TẠO VĂN BẢN HÀNG LOẠT
+                  Xem trước dữ liệu
                 </button>
               </div>
             </div>
@@ -279,7 +275,7 @@
             <div class="progress-track" id="progressTrack">
               <div class="progress-bar" id="progressBar"></div>
             </div>
-            <div class="status-log" id="status"></div>
+            <div class="status-log" id="status" role="status" aria-live="polite">Chọn mẫu và nguồn dữ liệu, sau đó xem trước để kiểm tra trước khi xuất.</div>
           </div>
         </div>
 
@@ -626,7 +622,7 @@
         <div style="display:flex; align-items:center; gap: 10px; flex-wrap: wrap;">
           <h2 class="modal-title">Bảng Xem Trước Dữ Liệu Trộn Văn Bản</h2>
           <span id="previewStatsBadge" class="badge">0 dòng</span>
-          <span id="previewModifiedBadge" class="badge" style="display:none; background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-weight:600;">✏️ Đã có chỉnh sửa (sẽ lưu ngược vào nguồn gốc khi xuất)</span>
+          <span id="previewModifiedBadge" class="badge" style="display:none; background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-weight:600;">Đã chỉnh sửa trong phiên này; file gốc được giữ nguyên</span>
         </div>
         <div style="display:flex; align-items:center; gap:6px;">
           <button type="button" id="togglePreviewFullscreenBtn" title="Phóng to / Thu nhỏ bảng" style="background:none; border:1px solid var(--border); border-radius:6px; padding:5px 9px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; gap:5px; font-size:0.78rem;">
@@ -654,6 +650,7 @@
           <button type="button" id="exportPreviewDataBtn" class="btn btn-secondary" style="font-size: 0.78rem;">
             Xuất file Excel
           </button>
+          <button type="button" id="savePreviewCopyBtn" class="btn btn-secondary" style="font-size: 0.78rem;" title="Lưu toàn bộ dữ liệu xem trước vào thư viện, không ghi đè file gốc">Lưu bản sao dữ liệu</button>
         </div>
 
         <div class="preview-table-wrapper" id="previewTableWrapper">
@@ -666,7 +663,7 @@
       <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
         <label style="display:flex; align-items:center; gap:6px; cursor:pointer; margin-bottom:0; font-size:0.8rem;">
           <input type="checkbox" id="selectAllPreviewRows" checked>
-          Chọn tất cả các dòng để xuất
+          Chọn các dòng đang hiển thị
         </label>
         <div style="display:flex; align-items:center; gap:12px;">
           <div style="display:flex; align-items:center; gap:6px; font-size:0.82rem;">
@@ -678,7 +675,7 @@
             </select>
           </div>
           <button type="button" id="confirmExportBtn" class="btn btn-primary" style="padding: 10px 24px;">
-            XÁC NHẬN & BẮT ĐẦU XUẤT FILE
+            Xuất các dòng đã chọn
           </button>
         </div>
       </div>

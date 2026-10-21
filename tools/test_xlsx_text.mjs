@@ -40,7 +40,8 @@ const imported = await parseLocalDataFile({ name: 'unicode.xlsx', arrayBuffer: a
 assert.deepEqual(imported.data.map(row => row['Nội dung']), samples);
 let html = '';
 const table = { set innerHTML(value) { html = value; } };
-globalThis.document = { getElementById: id => id === 'previewDataTable' ? table : null };
+globalThis.document = { getElementById: id => id === 'previewDataTable' ? table : null,
+  querySelectorAll: () => [] };
 renderPreviewTable({ headers: ['Nội dung'], rawData: imported.data });
 assert.ok(html.includes('Nguyễn Thị Hồng Hạnh'));
 assert.ok(html.includes('A &amp; B &lt; C'));

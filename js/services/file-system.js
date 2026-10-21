@@ -59,7 +59,7 @@ export async function pickLocalExcelFile() {
       throw err;
     }
   }
-  return null; // Không hỗ trợ API native, sẽ dùng input file fallback
+  return undefined; // Unsupported; null means the user cancelled.
 }
 
 /**

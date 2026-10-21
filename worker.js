@@ -208,7 +208,11 @@ self.onmessage = function(e) {
                      (typeof window !== 'undefined' ? window.JSZip : null) || 
                      (typeof JSZip !== 'undefined' ? JSZip : null);
 
-  const ext = exportFormat === 'pdf' ? 'pdf' : 'docx';
+  if (exportFormat !== 'docx') {
+    self.postMessage({ type: 'error', message: 'Hiện chỉ hỗ trợ xuất Word (.docx). Vui lòng chuyển Word sang PDF bằng phần mềm có hỗ trợ.' });
+    return;
+  }
+  const ext = 'docx';
 
   try {
     // TRƯỜNG HỢP 1: XUẤT 1 FILE ĐƠN LẺ (từ nút xuất ở từng dòng HOẶC khi chỉ chọn đúng 1 dòng)

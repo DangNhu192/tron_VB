@@ -169,6 +169,18 @@ async function runAllTests() {
     process.exit(1);
   }
 
+  const unsupported = createWorkerContext();
+  unsupported.context.self.onmessage({ data: {
+    editedData: testData,
+    processedDocBuffer: tplBuffer,
+    nameFormat: '[ten_bien]',
+    exportFormat: 'pdf'
+  } });
+  const unsupportedResult = await unsupported.donePromise;
+  if (unsupportedResult.type !== 'error' || !unsupportedResult.message.includes('.docx')) {
+    throw new Error('Unsupported PDF must be rejected, never renamed DOCX.');
+  }
+
   console.log("\n=======================================================");
   console.log("=== TAT CA 4 CHE DO TEST DEU DAT KET QUA HOAN HAO! ===");
   console.log("=======================================================");

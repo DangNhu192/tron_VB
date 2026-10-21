@@ -47,7 +47,7 @@ function getColumnMinWidth(colName) {
   let headerHtml = '<tr>';
   headerHtml += `
     <th class="col-select" title="Chọn tất cả">
-      <input type="checkbox" id="selectAllPreviewRows" checked style="cursor:pointer; accent-color:var(--primary);">
+      <input type="checkbox" id="selectVisiblePreviewRows" aria-label="Chọn các dòng đang hiển thị" style="cursor:pointer; accent-color:var(--primary);">
     </th>
     <th class="col-stt">#</th>
   `;
@@ -84,7 +84,7 @@ function getColumnMinWidth(colName) {
     rowsHtml += `<tr class="preview-row" data-row-idx="${originalIdx}" style="${rowBgStyle}">`;
     rowsHtml += `
       <td class="col-select">
-        <input type="checkbox" class="row-select-checkbox" checked style="cursor:pointer; accent-color:var(--primary);">
+        <input type="checkbox" class="row-select-checkbox" aria-label="Chọn dòng ${originalIdx + 1}" ${state.excludedRows?.has(row) ? '' : 'checked'} style="cursor:pointer; accent-color:var(--primary);">
       </td>
       <td class="col-stt" style="font-weight:600; color:var(--text-muted);">
         ${originalIdx + 1}
@@ -115,6 +115,9 @@ function getColumnMinWidth(colName) {
     </tr>`;
   });
 
+  if (!indexedRows.length) {
+    rowsHtml = `<tr><td colspan="${headers.length + 3}" class="table-empty">Không có dòng phù hợp. Hãy đổi từ khóa hoặc tắt bộ lọc cảnh báo.</td></tr>`;
+  }
   tableEl.innerHTML = headerHtml + rowsHtml;
 
   const statsBadge = document.getElementById('previewStatsBadge');
@@ -122,13 +125,36 @@ function getColumnMinWidth(colName) {
     statsBadge.textContent = `${indexedRows.length} / ${rawData.length} hàng`;
   }
 
-  const selectAllCb = document.getElementById('selectAllPreviewRows');
-  if (selectAllCb) {
-    selectAllCb.addEventListener('change', (e) => {
-      const cbs = document.querySelectorAll('.row-select-checkbox');
-      cbs.forEach(cb => cb.checked = e.target.checked);
-    });
+  updateSelectionControls(state);
+  for (const id of ['selectVisiblePreviewRows', 'selectAllPreviewRows']) {
+    const cb = document.getElementById(id);
+    if (cb) cb.onchange = () => {
+      document.querySelectorAll('.preview-row').forEach(tr => {
+        const item = tr.querySelector('.row-select-checkbox');
+        item.checked = cb.checked;
+        const row = state.rawData[Number(tr.dataset.rowIdx)];
+        if (cb.checked) state.excludedRows?.delete(row);
+        else state.excludedRows?.add(row);
+      });
+      updateSelectionControls(state);
+    };
   }
+}
+
+function updateSelectionControls(state) {
+  const cbs = Array.from(document.querySelectorAll('.row-select-checkbox'));
+  const selected = cbs.filter(cb => cb.checked).length;
+  for (const id of ['selectVisiblePreviewRows', 'selectAllPreviewRows']) {
+    const cb = document.getElementById(id);
+    if (!cb) continue;
+    cb.checked = cbs.length > 0 && selected === cbs.length;
+    cb.indeterminate = selected > 0 && selected < cbs.length;
+    cb.disabled = cbs.length === 0;
+  }
+  const stats = document.getElementById('previewStatsBadge');
+  if (stats) stats.textContent = `Hiện ${cbs.length}/${state.rawData.length} dòng · Chọn ${selected}`;
+  const exportBtn = document.getElementById('confirmExportBtn');
+  if (exportBtn) exportBtn.disabled = selected === 0;
 }
 
 /**
@@ -192,7 +218,7 @@ export function handleTablePaste(event, currentInput, state, onRender) {
       const targetColIdx = startColIdx + cIdx;
       if (targetColIdx < state.headers.length) {
         const colHeader = state.headers[targetColIdx];
-        state.rawData[targetRowIdx][colHeader] = cellVal.trim();
+        state.rawData[targetRowIdx][colHeader] = cellVal;
       }
     });
   });
@@ -225,10 +251,21 @@ export function syncInputsToRawData(state) {
 /**
  * Gắn listeners cho bảng xem trước
  */
-export function setupPreviewTableListeners(tableEl, state, onRender, onExportSingle, onDataChange) {
+export function setupPreviewTableListeners(tableEl, stateOrProvider, onRender, onExportSingle, onDataChange) {
   if (!tableEl) return;
+  const getState = () => typeof stateOrProvider === 'function' ? stateOrProvider() : stateOrProvider;
+
+  tableEl.addEventListener('change', event => {
+    if (!event.target.matches('.row-select-checkbox')) return;
+    const state = getState();
+    const row = state.rawData[Number(event.target.closest('.preview-row').dataset.rowIdx)];
+    if (event.target.checked) state.excludedRows?.delete(row);
+    else state.excludedRows?.add(row);
+    updateSelectionControls(state);
+  });
 
   tableEl.addEventListener('input', (event) => {
+    const state = getState();
     const input = event.target.closest('.preview-input');
     if (input) {
       const tr = input.closest('.preview-row');
@@ -243,6 +280,7 @@ export function setupPreviewTableListeners(tableEl, state, onRender, onExportSin
   });
 
   tableEl.addEventListener('paste', (event) => {
+    const state = getState();
     const input = event.target.closest('.preview-input');
     if (input) {
       handleTablePaste(event, input, state, () => {
@@ -253,11 +291,13 @@ export function setupPreviewTableListeners(tableEl, state, onRender, onExportSin
   });
 
   tableEl.addEventListener('click', (event) => {
+    const state = getState();
     const btnDel = event.target.closest('.btn-del-row');
     if (btnDel) {
       const tr = btnDel.closest('tr');
       const rowIdx = parseInt(tr.dataset.rowIdx, 10);
       if (!isNaN(rowIdx)) {
+        state.excludedRows?.delete(state.rawData[rowIdx]);
         state.rawData.splice(rowIdx, 1);
         if (onRender) onRender();
         if (onDataChange) onDataChange();

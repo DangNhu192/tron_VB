@@ -32,9 +32,7 @@ import {
   generateSampleDocxFromTemplate,
   generateGoogleSheetTemplate,
   exportPreviewDataToExcel,
-  isDataModified,
-  buildUpdatedExcelBuffer,
-  buildUpdatedDocxTableBuffer
+  isDataModified
 } from './services/excel-service.js';
 
 import {
@@ -53,11 +51,12 @@ import {
   pickLocalExcelFile,
   saveFileHandle,
   getFileFromHandle,
-  deleteFileHandle,
-  writeToFileHandle
+  deleteFileHandle
 } from './services/file-system.js';
 
 import { showToast } from './ui/toast.js';
+import { setupFileDropzones } from './ui/file-drop.js';
+import { setupDialogAccessibility } from './ui/dialogs.js';
 import { initTheme, toggleTheme } from './ui/theme.js';
 
 import {
@@ -97,6 +96,8 @@ function normalizeRowsForWord(rows) {
   });
 }
 let currentPreviewRawData = [];
+const excludedPreviewRows = new Set();
+let previewCopyId = null;
 let currentExcelWorkbook = null;
 let fieldTransformers = {};
 let isOnlyErrorsFilter = false;
@@ -120,7 +121,8 @@ function getPreviewState() {
     rawData: currentPreviewRawData,
     templateVars: currentTemplateVars,
     fieldTransformers,
-    isOnlyErrorsFilter
+    isOnlyErrorsFilter,
+    excludedRows: excludedPreviewRows
   };
 }
 
@@ -130,6 +132,12 @@ function refreshPreviewTable() {
 }
 
 function showPreviewModal(headers, rowsData) {
+  previewCopyId = null;
+  excludedPreviewRows.clear();
+  isOnlyErrorsFilter = false;
+  const search = document.getElementById('previewSearchInput');
+  if (search) search.value = '';
+  document.getElementById('toggleEmptyErrorBtn')?.classList.remove('active');
   currentPreviewHeaders = headers;
   currentPreviewRawData = rowsData;
   refreshPreviewTable();
@@ -139,69 +147,18 @@ function showPreviewModal(headers, rowsData) {
   if (modal) modal.classList.add('is-open');
 }
 
-/**
- * Lưu ngược dữ liệu đã chỉnh sửa về nguồn dữ liệu gốc (kèm thông báo tiến trình cho người dùng)
- */
-async function saveBackToOriginalSource(origin, headers, rowsData) {
-  if (!origin) return;
-
-  const uiStatus = document.getElementById('status');
-  if (uiStatus) {
-    uiStatus.style.color = 'var(--primary)';
-    uiStatus.innerText = `Đang lưu ngược dữ liệu đã chỉnh sửa về nguồn "${origin.name}"...`;
-  }
-  showToast(`Đang lưu ngược dữ liệu về nguồn gốc "${origin.name}"...`, 'info');
-
-  try {
-    if (origin.type === 'local_file' && origin.id) {
-      let buffer;
-      if (origin.isDocx) {
-        buffer = buildUpdatedDocxTableBuffer(headers, rowsData);
-      } else {
-        buffer = buildUpdatedExcelBuffer(origin.workbook, origin.sheetName, headers, rowsData);
-      }
-      const res = await writeToFileHandle(origin.id, buffer);
-      if (res && res.mode === 'native_disk') {
-        showToast(`✓ Đã lưu ngược thành công ${rowsData.length} dòng về file trên máy: "${origin.fileName || origin.name}"!`, 'success');
-      } else {
-        showToast(`✓ Đã lưu ngược dữ liệu (${rowsData.length} dòng) vào bộ nhớ tiện ích cho file "${origin.name}"!`, 'success');
-      }
-    } else if (origin.type === 'local' && origin.id) {
-      await DataManager.save(origin.id, {
-        name: origin.name,
-        type: 'local',
-        data: rowsData,
-        sheetName: origin.sheetName || ''
-      });
-      await renderDataList(DataManager);
-      showToast(`✓ Đã lưu ngược thành công ${rowsData.length} dòng về Thư viện dữ liệu: "${origin.name}"!`, 'success');
-    } else if (origin.type === 'input_file') {
-      window.dataContext = window.dataContext || {};
-      window.dataContext.fullData = rowsData;
-      await DataManager.save(`${origin.name} (Đã cập nhật)`, 'local', rowsData);
-      await renderDataList(DataManager);
-      showToast(`✓ Đã cập nhật dữ liệu phiên làm việc & lưu bản sao vào Thư viện dữ liệu!`, 'success');
-    } else {
-      // google_sheets hoặc excel_link
-      window.dataContext = window.dataContext || {};
-      window.dataContext.fullData = rowsData;
-      await DataManager.save(`${origin.name} (Đã chỉnh sửa)`, 'local', rowsData);
-      await renderDataList(DataManager);
-      showToast(`✓ Đã lưu bản sao dữ liệu đã chỉnh sửa (${rowsData.length} dòng) vào Thư viện AutoDoc!`, 'info');
-    }
-
-    origin.originalData = JSON.parse(JSON.stringify(rowsData));
-    const badge = document.getElementById('previewModifiedBadge');
-    if (badge) badge.style.display = 'none';
-
-  } catch (saveErr) {
-    console.warn('Lỗi lưu ngược dữ liệu về nguồn gốc:', saveErr);
-    showToast(`⚠️ Không thể ghi đè trực tiếp file trên máy (${saveErr.message}). Đã lưu bản sao an toàn vào Thư viện dữ liệu!`, 'warning');
-    try {
-      await DataManager.save(`${origin.name} (Bản sao chỉnh sửa)`, 'local', rowsData);
-      await renderDataList(DataManager);
-    } catch(e) {}
-  }
+// Save an explicit library copy; exporting must not overwrite the original file.
+async function savePreviewCopy() {
+  syncInputsToRawData(getPreviewState());
+  if (!currentPreviewRawData.length) return;
+  previewCopyId ||= 'data_copy_' + Date.now();
+  await DataManager.save(previewCopyId, {
+    name: (activeDataSourceOrigin?.name || 'Dữ liệu') + ' (Bản sao chỉnh sửa)',
+    type: 'local',
+    data: JSON.parse(JSON.stringify(currentPreviewRawData))
+  });
+  await renderDataList(DataManager);
+  showToast('Đã lưu bản sao dữ liệu vào thư viện. File gốc được giữ nguyên.', 'success');
 }
 
 function switchSource(source) {
@@ -247,7 +204,7 @@ function bindFileNameDisplay(inputId, nameElId) {
     input.addEventListener('change', function () {
       const nameEl = document.getElementById(nameElId);
       if (nameEl) {
-        nameEl.innerHTML = this.files[0] ? `✓ Đã chọn: <b>${this.files[0].name}</b>` : '';
+        nameEl.textContent = this.files[0] ? `Đã chọn: ${this.files[0].name}` : '';
       }
     });
   }
@@ -370,6 +327,7 @@ const handleGenerateSampleExcel = handleAuditTemplate;
 
 async function initApp() {
   await initTheme();
+  setupDialogAccessibility();
 
   const themeToggleBtn = document.getElementById('themeToggleBtn');
   if (themeToggleBtn) {
@@ -663,40 +621,7 @@ async function initApp() {
 
   bindFileNameDisplay('docTemplate', 'docTemplateName');
 
-  // Universal Dropzone click & drag-drop delegates
-  document.querySelectorAll('.file-drop').forEach(dropzone => {
-    const fileInput = dropzone.querySelector('input[type="file"]');
-    if (!fileInput) return;
-
-    dropzone.addEventListener('click', (e) => {
-      if (e.target !== fileInput) {
-        fileInput.click();
-      }
-    });
-
-    dropzone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dropzone.style.borderColor = 'var(--primary)';
-      dropzone.style.backgroundColor = 'var(--primary-light)';
-    });
-
-    ['dragleave', 'dragend'].forEach(evtType => {
-      dropzone.addEventListener(evtType, () => {
-        dropzone.style.borderColor = '';
-        dropzone.style.backgroundColor = '';
-      });
-    });
-
-    dropzone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dropzone.style.borderColor = '';
-      dropzone.style.backgroundColor = '';
-      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        fileInput.files = e.dataTransfer.files;
-        fileInput.dispatchEvent(new Event('change', { bubbles: true }));
-      }
-    });
-  });
+  setupFileDropzones();
 
   const tplFileInput = document.getElementById('tplFileInput');
   if (tplFileInput) {
@@ -897,33 +822,6 @@ async function initApp() {
     });
   }
 
-  const dataFileDropZone = document.getElementById('dataFileDropZone');
-  const dataFileInputEl = document.getElementById('dataFileInput');
-  const dataFileNameEl = document.getElementById('dataFileName');
-  if (dataFileDropZone && dataFileInputEl) {
-    dataFileDropZone.addEventListener('click', () => dataFileInputEl.click());
-    dataFileInputEl.addEventListener('change', () => {
-      if (dataFileInputEl.files && dataFileInputEl.files[0] && dataFileNameEl) {
-        dataFileNameEl.textContent = dataFileInputEl.files[0].name;
-      }
-    });
-    dataFileDropZone.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      dataFileDropZone.style.borderColor = 'var(--primary)';
-    });
-    dataFileDropZone.addEventListener('dragleave', () => {
-      dataFileDropZone.style.borderColor = 'var(--border)';
-    });
-    dataFileDropZone.addEventListener('drop', (e) => {
-      e.preventDefault();
-      dataFileDropZone.style.borderColor = 'var(--border)';
-      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-        dataFileInputEl.files = e.dataTransfer.files;
-        if (dataFileNameEl) dataFileNameEl.textContent = e.dataTransfer.files[0].name;
-      }
-    });
-  }
-
   // Nút mở Google Drive chọn Google Sheets
   const openDriveSheetBtn = document.getElementById('openDriveSheetBtn');
   if (openDriveSheetBtn) {
@@ -1073,6 +971,8 @@ async function initApp() {
 
   if (dataLocalPickBtn) {
     dataLocalPickBtn.addEventListener('click', async () => {
+      if (dataLocalPickBtn.disabled) return;
+      dataLocalPickBtn.disabled = true;
       try {
         const picked = await pickLocalExcelFile();
         if (picked && picked.file) {
@@ -1085,13 +985,17 @@ async function initApp() {
           if (nameInput && !nameInput.value.trim()) {
             nameInput.value = picked.file.name.replace(/\.[^/.]+$/, "");
           }
-        } else if (picked === null) {
-          // Người dùng hủy hoặc không hỗ trợ showOpenFilePicker
+        } else if (picked === undefined) {
           if (dataLocalFileInput) dataLocalFileInput.click();
         }
       } catch (err) {
-        console.warn('Lỗi mở hộp thoại chọn file native, chuyển sang input file:', err);
-        if (dataLocalFileInput) dataLocalFileInput.click();
+        if (err.name === 'SecurityError' || err.name === 'NotAllowedError') {
+          if (dataLocalFileInput) dataLocalFileInput.click();
+        } else {
+          showToast(`Không thể đọc file đã chọn: ${err.message}`, 'error');
+        }
+      } finally {
+        dataLocalPickBtn.disabled = false;
       }
     });
   }
@@ -1278,6 +1182,15 @@ async function initApp() {
   }
 
   const exportPreviewDataBtn = document.getElementById('exportPreviewDataBtn');
+  const savePreviewCopyBtn = document.getElementById('savePreviewCopyBtn');
+  if (savePreviewCopyBtn) {
+    savePreviewCopyBtn.addEventListener('click', async () => {
+      savePreviewCopyBtn.disabled = true;
+      try { await savePreviewCopy(); }
+      catch (err) { showToast(`Không thể lưu bản sao: ${err.message}`, 'error'); }
+      finally { savePreviewCopyBtn.disabled = false; }
+    });
+  }
   if (exportPreviewDataBtn) {
     exportPreviewDataBtn.addEventListener('click', () => {
       try {
@@ -1294,19 +1207,16 @@ async function initApp() {
   if (previewDataTableEl) {
     setupPreviewTableListeners(
       previewDataTableEl,
-      getPreviewState(),
+      getPreviewState,
       refreshPreviewTable,
       async (rowIdx, btnExportSingle) => {
         if (!onConfirmExportCallback) return;
         syncInputsToRawData(getPreviewState());
-        if (activeDataSourceOrigin && isDataModified(activeDataSourceOrigin.originalData, currentPreviewRawData)) {
-          await saveBackToOriginalSource(activeDataSourceOrigin, currentPreviewHeaders, currentPreviewRawData);
-        }
         btnExportSingle.style.opacity = '0.5';
         showToast(`Đang tạo file đơn cho dòng ${rowIdx + 1}...`, 'info');
-        const singleData = getEditedData();
-        if (singleData[rowIdx]) {
-          onConfirmExportCallback([singleData[rowIdx]], true, rowIdx);
+        const singleRow = currentPreviewRawData[rowIdx];
+        if (singleRow) {
+          onConfirmExportCallback([{ ...singleRow }], true, rowIdx);
         }
       },
       checkAndDisplayModifiedState
@@ -1320,11 +1230,6 @@ async function initApp() {
       const editedData = getEditedData();
       if (editedData.length === 0) {
         return showToast('Vui lòng tích chọn ít nhất 1 hàng dữ liệu để xuất.', 'warning');
-      }
-
-      // Tự động lưu ngược dữ liệu đã chỉnh sửa về nguồn dữ liệu gốc (kèm thông báo tiến trình)
-      if (activeDataSourceOrigin && isDataModified(activeDataSourceOrigin.originalData, currentPreviewRawData)) {
-        await saveBackToOriginalSource(activeDataSourceOrigin, currentPreviewHeaders, currentPreviewRawData);
       }
 
       const checkEnabled = document.getElementById('enableConsistencyCheck')?.checked;
@@ -1858,7 +1763,27 @@ async function initApp() {
 
   // View Switcher (Header Navigation Tabs)
   const navTabs = document.querySelectorAll('#mainNavTabs .nav-tab');
-  navTabs.forEach(tab => {
+  document.getElementById('mainNavTabs')?.setAttribute('role', 'tablist');
+  navTabs.forEach((tab, index) => {
+    tab.setAttribute('role', 'tab');
+    tab.setAttribute('aria-controls', tab.dataset.view);
+    if (!tab.id) tab.id = `workspace-tab-${index}`;
+    const panel = document.getElementById(tab.dataset.view);
+    panel?.setAttribute('role', 'tabpanel');
+    panel?.setAttribute('aria-labelledby', tab.id);
+    tab.setAttribute('aria-selected', String(tab.classList.contains('active')));
+    tab.tabIndex = tab.classList.contains('active') ? 0 : -1;
+    tab.addEventListener('keydown', event => {
+      let next;
+      if (event.key === 'ArrowRight') next = (index + 1) % navTabs.length;
+      if (event.key === 'ArrowLeft') next = (index + navTabs.length - 1) % navTabs.length;
+      if (event.key === 'Home') next = 0;
+      if (event.key === 'End') next = navTabs.length - 1;
+      if (next === undefined) return;
+      event.preventDefault();
+      navTabs[next].focus();
+      navTabs[next].click();
+    });
     tab.addEventListener('click', () => {
       const targetViewId = tab.dataset.view;
       if (!targetViewId) return;
@@ -1866,6 +1791,7 @@ async function initApp() {
       navTabs.forEach(t => {
         t.classList.remove('active');
         t.setAttribute('aria-selected', 'false');
+        t.tabIndex = -1;
       });
       document.querySelectorAll('.view-panel').forEach(panel => {
         panel.classList.remove('active');
@@ -1873,6 +1799,7 @@ async function initApp() {
 
       tab.classList.add('active');
       tab.setAttribute('aria-selected', 'true');
+      tab.tabIndex = 0;
       const targetView = document.getElementById(targetViewId);
       if (targetView) {
         targetView.classList.add('active');
