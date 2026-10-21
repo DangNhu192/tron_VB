@@ -1,0 +1,33 @@
+# Local agent/editor state and generated artifacts
+.agents/
+.vscode/
+outputs/
+node_modules/
+.env
+.env.*
+*.log
+*.bak
+
+# User data, old packages and temporary documents are not extension source.
+*.rar
+*.zip
+*.docx
+*.xlsx
+*.xls
+*.csv
+*.pdf
+
+# Keep only the maintained test tools, not historical repair scripts/data dumps.
+tools/*
+!tools/audit_syntax.mjs
+!tools/check_dom_ids.mjs
+!tools/run_all_tests.mjs
+!tools/test_data_sync_back.mjs
+!tools/test_docx_gen.mjs
+!tools/test_google_sheets.mjs
+!tools/test_template_audit.mjs
+!tools/test_ui_workflow.mjs
+!tools/test_unicode_normalization.mjs
+!tools/test_worker_vm.js
+!tools/test_xlsx_text.mjs
+!tools/verify_all.mjs
