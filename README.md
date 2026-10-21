@@ -1,6 +1,6 @@
 # AutoDoc — Extension trộn văn bản 2.0
 
-Mã nguồn chính nằm trên nhánh **main**. Phiên bản extension giữ nguyên **2.0**.
+Mã nguồn chính nằm trên nhánh **main**. Phiên bản extension  **2.0**.
 
 ## Cài đặt / cập nhật
 
