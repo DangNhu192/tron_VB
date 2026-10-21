@@ -100,6 +100,7 @@ export const DataManager = {
       type,
       data,
       link,
+      fileName: typeof payloadOrType === 'object' && payloadOrType !== null ? (payloadOrType.fileName || null) : null,
       sheetName: customSheetName,
       savedAt: new Date().toISOString()
     };
@@ -195,7 +196,7 @@ export const TemplateManager = {
     return result[TEMPLATES_KEY] || {};
   },
 
-  async save(name, arrayBuffer, category = 'khac') {
+  async save(name, arrayBuffer, category = 'khac', source = {}) {
     const templates = await this.list();
     if (Object.keys(templates).length >= MAX_TEMPLATES && !templates[name]) {
       throw new Error(`Đã đạt giới hạn ${MAX_TEMPLATES} mẫu. Xóa một mẫu cũ để tiếp tục.`);
@@ -207,6 +208,8 @@ export const TemplateManager = {
       size: arrayBuffer.byteLength, 
       savedAt: new Date().toISOString(),
       category: category || 'khac',
+      fileName: source.fileName || null,
+      sourceUrl: source.sourceUrl || null,
       isFavorite: false
     };
     await safeStorage.set({ [TEMPLATES_KEY]: templates });

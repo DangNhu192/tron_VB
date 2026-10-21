@@ -400,7 +400,7 @@ export async function renderTemplateList(TemplateManager, CategoryManager) {
           <button class="tpl-star-btn ${isFav ? 'is-fav' : ''}" data-name="${safeName}" title="${isFav ? 'Bỏ yêu thích' : 'Đánh dấu yêu thích'}">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </button>
-          <span class="tpl-name" title="${safeName}">${safeName} <br><small style="color:var(--primary);font-weight:500">[${catText}]</small></span>
+          <button type="button" class="tpl-name source-name-btn tpl-source-info" data-name="${safeName}" title="Xem thông tin nguồn của ${safeName}">${safeName} <br><small style="color:var(--primary);font-weight:500">[${catText}]</small></button>
           <span class="tpl-size">${formatBytes(t.size)}</span>
           <button class="tpl-download" data-name="${safeName}" title="Tải file mẫu (.docx) về máy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
           <button class="tpl-rename" data-name="${safeName}" title="Đổi tên"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg></button>
@@ -487,7 +487,7 @@ export async function renderDataList(DataManager) {
       return `
         <div class="tpl-item" data-id="${safeId}">
           <span class="tpl-icon">${iconSvg}</span>
-          <span class="tpl-name" title="${safeName}">${safeName} <br><small style="color:var(--text-muted);font-weight:400">${subText}</small></span>
+          <button type="button" class="tpl-name source-name-btn data-source-info" data-id="${safeId}" title="Xem thông tin nguồn của ${safeName}">${safeName} <br><small style="color:var(--text-muted);font-weight:400">${subText}</small></button>
           <button class="tpl-del-data" data-id="${safeId}" title="Xóa"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
         </div>
       `;

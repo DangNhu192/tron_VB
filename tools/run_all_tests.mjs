@@ -10,7 +10,8 @@ const testSuites = [
   { name: 'Template Audit & Sample Generators', script: 'tools/test_template_audit.mjs' },
   { name: 'Data Modification & Sync Back to Source', script: 'tools/test_data_sync_back.mjs' },
   { name: 'Word DOCX Generation & XML Table Parsing', script: 'tools/test_docx_gen.mjs' },
-  { name: 'HTML & DOM ID Consistency Audit', script: 'tools/check_dom_ids.mjs' }
+  { name: 'HTML & DOM ID Consistency Audit', script: 'tools/check_dom_ids.mjs' },
+  { name: 'Saved Source Details & Safe URLs', script: 'tools/test_source_details.mjs' }
 ];
 
 console.log('================================================================');

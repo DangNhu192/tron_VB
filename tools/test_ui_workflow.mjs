@@ -50,6 +50,34 @@ try {
   };
   await page.goto(`${base}/app.html`);
   await page.locator('.file-drop[role="button"]').first().waitFor({ state: 'attached' });
+  await page.evaluate(() => {
+    localStorage.setItem('tpl_lib_v1', JSON.stringify({
+      'Mẫu thử.docx': { name: 'Mẫu thử.docx', data: 'AQ==', size: 1, category: 'khac', fileName: 'BanGoc.docx', savedAt: new Date().toISOString() }
+    }));
+    localStorage.setItem('autodoc_data_sources_v1', JSON.stringify({
+      sheet: { id: 'sheet', name: 'Bảng thử', type: 'google_sheets', link: 'https://docs.google.com/spreadsheets/d/example/edit', savedAt: new Date().toISOString() },
+      local: { id: 'local', name: 'Dữ liệu máy', type: 'local_file', fileName: 'DuLieu.xlsx', savedAt: new Date().toISOString() }
+    }));
+  });
+  await page.reload();
+  await page.locator('[data-view="viewTemplates"]').click();
+  await page.locator('.tpl-source-info').click();
+  assert.match(await page.locator('#sourceDetailsModal .modal-body').innerText(), /BanGoc\.docx/);
+  assert.equal(await page.locator('#tplLibSelect').inputValue(), 'Mẫu thử.docx', 'Clicking template name also selects it');
+  await page.keyboard.press('Escape');
+  await page.locator('[data-view="viewData"]').click();
+  await page.locator('.data-source-info[data-id="sheet"]').click();
+  assert.equal(await page.locator('#sourceDetailsModal a').getAttribute('href'), 'https://docs.google.com/spreadsheets/d/example/edit');
+  await page.keyboard.press('Escape');
+  await page.locator('.data-source-info[data-id="local"]').click();
+  assert.match(await page.locator('#sourceDetailsModal .modal-body').innerText(), /DuLieu\.xlsx/);
+  assert.equal(await page.locator('#sourceDetailsModal a').count(), 0, 'Local source must not invent a file URL');
+  await page.keyboard.press('Escape');
+  await page.evaluate(() => {
+    localStorage.removeItem('tpl_lib_v1');
+    localStorage.removeItem('autodoc_data_sources_v1');
+  });
+  await page.reload();
   await page.locator('[data-view="viewWorkspace"]').focus();
   await page.keyboard.press('ArrowRight');
   assert.equal(await page.locator('#viewTemplates').evaluate(el => el.classList.contains('active')), true, 'Arrow keys switch navigation tabs');

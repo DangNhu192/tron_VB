@@ -694,6 +694,42 @@ input[type="text"]:focus, select:focus {
   white-space: nowrap;
 }
 
+.source-name-btn {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.source-name-btn:hover,
+.source-name-btn:focus-visible {
+  color: var(--primary);
+  text-decoration: underline;
+}
+
+.source-details-body {
+  gap: 14px;
+}
+
+.source-details-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+
+.source-details-row strong {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.source-details-row a {
+  color: var(--primary);
+}
+
 .tpl-size {
   font-size: 0.72rem;
   color: var(--text-muted);

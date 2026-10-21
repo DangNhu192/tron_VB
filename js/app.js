@@ -57,6 +57,7 @@ import {
 import { showToast } from './ui/toast.js';
 import { setupFileDropzones } from './ui/file-drop.js';
 import { setupDialogAccessibility } from './ui/dialogs.js';
+import { setupSourceDetails } from './ui/source-details.js';
 import { initTheme, toggleTheme } from './ui/theme.js';
 
 import {
@@ -371,6 +372,7 @@ const handleGenerateSampleExcel = handleAuditTemplate;
 
 async function initApp() {
   await initTheme();
+  const showSourceDetails = setupSourceDetails();
   setupDialogAccessibility();
 
   const themeToggleBtn = document.getElementById('themeToggleBtn');
@@ -725,13 +727,13 @@ async function initApp() {
         if (files.length === 1) {
           if (!name) return showToast('Vui lòng đặt tên cho mẫu.', 'warning');
           const buffer = await files[0].arrayBuffer();
-          await TemplateManager.save(name, buffer, cat);
+          await TemplateManager.save(name, buffer, cat, { fileName: files[0].name });
         } else {
           for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const autoName = file.name.replace(/\.docx$/i, '');
             const buffer = await file.arrayBuffer();
-            await TemplateManager.save(autoName, buffer, cat);
+            await TemplateManager.save(autoName, buffer, cat, { fileName: file.name });
           }
         }
         await renderTemplateList(TemplateManager, CategoryManager);
@@ -751,6 +753,19 @@ async function initApp() {
   const templateListEl = document.getElementById('templateList');
   if (templateListEl) {
     templateListEl.addEventListener('click', async (event) => {
+      const sourceButton = event.target.closest('.tpl-source-info');
+      if (sourceButton) {
+        const templates = await TemplateManager.list();
+        const item = templates[sourceButton.dataset.name];
+        if (item) {
+          const sel = document.getElementById('tplLibSelect');
+          if (sel) sel.value = item.name;
+          templateListEl.querySelectorAll('.tpl-item').forEach(row => row.classList.remove('selected'));
+          sourceButton.closest('.tpl-item')?.classList.add('selected');
+          showSourceDetails(item, 'template');
+        }
+        return;
+      }
       const tplStar = event.target.closest('.tpl-star-btn');
       if (tplStar) {
         event.stopPropagation();
@@ -831,6 +846,13 @@ async function initApp() {
   const dataListEl = document.getElementById('dataList');
   if (dataListEl) {
     dataListEl.addEventListener('click', async (event) => {
+      const sourceButton = event.target.closest('.data-source-info');
+      if (sourceButton) {
+        const sources = await DataManager.list();
+        const item = sources[sourceButton.dataset.id];
+        if (item) showSourceDetails(item, 'data');
+        return;
+      }
       const delBtn = event.target.closest('.tpl-del-data');
       if (delBtn) {
         event.stopPropagation();
