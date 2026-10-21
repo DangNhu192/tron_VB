@@ -97,7 +97,7 @@ export function buildSampleDataRow(headers) {
     if (lower.includes('phong') || lower.includes('ban') || lower.includes('don_vi') || lower.includes('co_quan')) return 'UBND Thành phố';
     if (lower.includes('dia_chi') || lower.includes('noi_o') || lower.includes('tru_so')) return 'Số 1 Tràng Tiền, Hà Nội';
     if (lower.includes('tien') || lower.includes('gia') || lower.includes('luong') || lower.includes('kinh_phi')) return '10,000,000';
-    if (lower.includes('email') || lower.includes('mail')) return 'nguyenvana@gmail.com';
+    if (lower.includes('email') || lower.includes('mail')) return 'minh-hoa@example.invalid';
     if (lower.includes('sdt') || lower.includes('dien_thoai') || lower.includes('phone')) return '0912345678';
     return `[Mẫu ${h}]`;
   });

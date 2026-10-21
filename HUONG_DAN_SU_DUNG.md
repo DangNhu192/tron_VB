@@ -19,6 +19,8 @@ Trong tab **Tạo văn bản**, chọn mẫu từ thư viện hoặc tải file 
 file dữ liệu từ máy hoặc một nguồn đã lưu trong tab **Nguồn dữ liệu**, rồi bấm
 **Xem trước dữ liệu**.
 
+![Chọn mẫu Word và file dữ liệu minh họa](docs/images/01-chon-mau-du-lieu.png)
+
 Google Sheets được đọc lại mỗi lần mở xem trước. Trong bảng xem trước, bấm
 **Cập nhật Google Sheets** để lấy dữ liệu mới theo yêu cầu. Nếu có cột `Check`,
 chỉ dòng có `True` được đưa vào; nếu chỉ có `Check DL`, cột đó được áp dụng.
@@ -35,12 +37,18 @@ một văn bản trước khi chạy toàn bộ. Nút **Xuất Excel** tải d�
 Nếu đã sửa dữ liệu trong bảng xem trước, hãy lưu bản sao trước khi cập nhật lại
 Google Sheets để tránh mất các thay đổi cục bộ.
 
+![Bảng xem trước với hai dòng dữ liệu giả lập](docs/images/02-xem-truoc-du-lieu.png)
+
 ## 4. Xuất Word
 
 Chọn tên file bằng cú pháp `[Tên_Cột]`, chẳng hạn `[SoVanBan]_[HoTen]`. Chọn
 một trong ba chế độ: gộp các văn bản vào một file `.docx`, tải từng file `.docx`
 hoặc đóng gói trong `.zip`. Bấm **Xuất các dòng đã chọn** và kiểm tra kết quả.
 AutoDoc 2.0 chưa xuất PDF trực tiếp.
+
+Nếu muốn làm việc cạnh trang tính, mở AutoDoc trong cửa sổ cạnh bên của Chrome:
+
+<img src="docs/images/03-cua-so-canh-ben.png" alt="Giao diện AutoDoc ở cửa sổ cạnh bên với dữ liệu giả lập" width="360">
 
 ## 5. Quản lý và xử lý sự cố
 

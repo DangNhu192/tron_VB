@@ -19,6 +19,23 @@ kiểm tra từng dòng trong bảng xem trước rồi chọn những văn bả
 Sau khi cập nhật mã nguồn, bấm **Tải lại** tại `chrome://extensions` rồi mở lại
 AutoDoc.
 
+## Giao diện minh họa
+
+Các ảnh dưới đây được chụp từ AutoDoc 2.0 đang chạy trên Chrome với mẫu Word
+và bảng Excel **giả lập**. Không dùng hồ sơ trình duyệt hoặc dữ liệu của người dùng.
+
+**Chọn mẫu và nguồn dữ liệu:**
+
+![Giao diện chọn mẫu Word và bảng dữ liệu minh họa](docs/images/01-chon-mau-du-lieu.png)
+
+**Kiểm tra các dòng trước khi xuất:**
+
+![Bảng xem trước với hai dòng dữ liệu giả lập](docs/images/02-xem-truoc-du-lieu.png)
+
+**Làm việc trong cửa sổ cạnh bên:**
+
+<img src="docs/images/03-cua-so-canh-ben.png" alt="AutoDoc trong cửa sổ cạnh bên Chrome với dữ liệu minh họa" width="360">
+
 ## Tạo văn bản đầu tiên
 
 1. Tạo mẫu Word `.docx` với các biến như `{{HoTen}}` và `{{DiaChi}}`.
@@ -104,16 +121,3 @@ Ví dụ, nếu mẫu ghi `Kính gửi: {{HoTen}}` và ô `HoTen` trong một d�
 - [Hướng dẫn sử dụng](HUONG_DAN_SU_DUNG.md)
 - [Kết nối Google Sheets](docs/google-sheets.md)
 - [Thiết kế giao diện](DESIGN.md)
-
-### Dành cho người phát triển
-
-Cần Node.js để chạy bộ kiểm thử:
-
-```powershell
-node tools/run_all_tests.mjs
-node tools/test_ui_workflow.mjs
-```
-
-Trên Windows đã cấu hình Git, chạy `deploy_github.bat` trong thư mục extension
-để kiểm thử, commit và đẩy thay đổi lên nhánh `main`. Script kiểm tra version
-`2.0` và không dùng `push --force`.

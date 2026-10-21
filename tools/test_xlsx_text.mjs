@@ -12,8 +12,8 @@ const PizZip = new Function('window', fs.readFileSync('libs/pizzip.min.js', 'utf
 const DOMParser = new Function('window', fs.readFileSync('libs/xmldom.min.js', 'utf8') + ';return window.DOMParser;')({});
 Object.assign(globalThis, { PizZip, DOMParser, XLSX });
 globalThis.window = { PizZip, DOMParser, XLSX };
-const samples = ['Tổ hợp tác cấp nước ấp Vĩnh Phước (tổ 8,9)', 'Nguyễn Thị Hồng Hạnh',
-  'Ông Lê Quốc Hùng', 'Đường tỉnh 868', 'Bệnh viện', 'Mỹ Hạnh', 'Nguyễn Văn Bé',
+const samples = ['Tổ hợp tác cấp nước minh họa', 'Văn bản tiếng Việt',
+  'Ông/Bà', 'Đường và phố', 'Bệnh viện', 'Mỹ thuật', 'Hồ sơ minh họa',
   '  giữ nguyên khoảng trắng  ', 'A & B < C', 'tiếng Việt', '😀'];
 const wb = XLSX.utils.book_new();
 XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Nội dung', 'Số'], ...samples.map((s, i) => [s, i])]), 'Dữ liệu');
@@ -43,7 +43,7 @@ const table = { set innerHTML(value) { html = value; } };
 globalThis.document = { getElementById: id => id === 'previewDataTable' ? table : null,
   querySelectorAll: () => [] };
 renderPreviewTable({ headers: ['Nội dung'], rawData: imported.data });
-assert.ok(html.includes('Nguyễn Thị Hồng Hạnh'));
+assert.ok(html.includes('Văn bản tiếng Việt'));
 assert.ok(html.includes('A &amp; B &lt; C'));
 globalThis.document = { querySelectorAll: () => imported.data.map(row => ({
   querySelector: () => ({ checked: true }),

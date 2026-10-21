@@ -9,7 +9,10 @@ const require = createRequire(import.meta.url);
 let playwright;
 try { playwright = require('playwright'); }
 catch {
-  const bundled = process.env.CODEX_NODE_MODULES || 'C:/Users/User/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules';
+  const bundled = process.env.CODEX_NODE_MODULES || (process.env.USERPROFILE && path.join(
+    process.env.USERPROFILE, '.cache', 'codex-runtimes', 'codex-primary-runtime', 'dependencies', 'node', 'node_modules'
+  ));
+  if (!bundled) throw new Error('Cần cài Playwright hoặc chỉ định CODEX_NODE_MODULES để chạy kiểm thử giao diện.');
   playwright = require(path.join(bundled, 'playwright'));
 }
 const root = process.cwd();
@@ -74,7 +77,7 @@ try {
     zip.file('_rels/.rels', '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>');
     zip.file('word/document.xml', '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>{{Họ tên}}</w:t></w:r></w:p><w:sectPr/></w:body></w:document>');
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([['Họ tên'], ['Nguyễn Văn Bé'], ['Nguyễn Thị Hồng'], ['Lê Quốc Hùng']]), 'Dữ liệu');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet([['Họ tên'], ['Bản ghi A'], ['Bản ghi B'], ['Bản ghi C']]), 'Dữ liệu');
     return { docx: [...zip.generate({ type: 'uint8array' })], xlsx: [...new Uint8Array(XLSX.write(workbook, { type: 'array', bookType: 'xlsx', bookSST: true }))] };
   });
   await page.locator('#docTemplate').setInputFiles({ name: 'Mau.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: Buffer.from(fixtures.docx) });
@@ -85,24 +88,24 @@ try {
   assert.equal(await page.locator('#selectAllPreviewRows').count(), 1, 'No duplicate select-all ID');
   await page.locator('.preview-row[data-row-idx="2"] .preview-input').evaluate(input => {
     const data = new DataTransfer();
-    data.setData('text/plain', '  Lê Quốc Hùng  \n');
+    data.setData('text/plain', '  Bản ghi C  \n');
     input.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
   });
-  assert.equal(await page.locator('.preview-row[data-row-idx="2"] .preview-input').inputValue(), '  Lê Quốc Hùng  ', 'Paste preserves original spaces');
+  assert.equal(await page.locator('.preview-row[data-row-idx="2"] .preview-input').inputValue(), '  Bản ghi C  ', 'Paste preserves original spaces');
   await page.locator('.preview-row[data-row-idx="0"] .row-select-checkbox').uncheck();
-  await page.locator('#previewSearchInput').fill('Thị Hồng');
+  await page.locator('#previewSearchInput').fill('Bản ghi B');
   await page.waitForFunction(() => document.querySelectorAll('.preview-row').length === 1);
   const singleInput = page.locator('.preview-row .preview-input');
-  await singleInput.fill('Nguyễn Thị Hồng đã sửa');
+  await singleInput.fill('Bản ghi B đã sửa');
   await page.locator('#previewSearchInput').fill('');
   await page.waitForFunction(() => document.querySelectorAll('.preview-row').length === 3);
   assert.equal(await page.locator('.preview-row[data-row-idx="0"] .row-select-checkbox').isChecked(), false, 'Selection persists through filtering');
   assert.equal(await page.locator('#selectAllPreviewRows').evaluate(el => el.indeterminate), true, 'Select-all displays partial selection');
-  assert.equal(await page.locator('.preview-row[data-row-idx="1"] .preview-input').inputValue(), 'Nguyễn Thị Hồng đã sửa', 'Edits use live state');
+  assert.equal(await page.locator('.preview-row[data-row-idx="1"] .preview-input').inputValue(), 'Bản ghi B đã sửa', 'Edits use live state');
   await page.locator('#previewSearchInput').fill('đã sửa');
   await page.locator('.btn-export-single').click();
   await page.waitForFunction(() => window.lastExportJob?.editedData?.length === 1);
-  assert.equal(await page.evaluate(() => window.lastExportJob.editedData[0]['Họ tên']), 'Nguyễn Thị Hồng đã sửa', 'Single export uses original row index after filtering');
+  assert.equal(await page.evaluate(() => window.lastExportJob.editedData[0]['Họ tên']), 'Bản ghi B đã sửa', 'Single export uses original row index after filtering');
   const libraryCopies = () => page.evaluate(async () => Object.values(await (await import('/js/core/storage.js')).DataManager.list()));
   assert.equal((await libraryCopies()).length, 0, 'Export does not save or overwrite a data source');
   await page.locator('#savePreviewCopyBtn').click();
@@ -113,7 +116,7 @@ try {
   const copies = await libraryCopies();
   assert.equal(copies.length, 1, 'Saving the same preview updates one copy instead of creating duplicates');
   assert.equal(copies[0].data.length, 3, 'Saved copy includes all preview rows, not just filtered rows');
-  assert.equal(copies[0].data[1]['Họ tên'], 'Nguyễn Thị Hồng đã sửa');
+  assert.equal(copies[0].data[1]['Họ tên'], 'Bản ghi B đã sửa');
   await page.locator('#previewSearchInput').fill('không tìm thấy');
   await page.waitForFunction(() => document.querySelector('#confirmExportBtn').disabled);
   assert.ok(await page.locator('.table-empty').isVisible(), 'Empty state is actionable');

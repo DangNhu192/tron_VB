@@ -47,13 +47,13 @@ assert.equal(normalizeVietnameseText('NguyỦn').text, 'Nguyễn');
 assert.equal(normalizeVietnameseText('dỹch').text, 'dịch');
 assert.equal(normalizeVietnameseText('nghiỡp').text, 'nghiệp');
 assert.equal(normalizeVietnameseText('ngỡ').text, 'ngỡ');
-assert.equal(normalizeVietnameseText('Long PhưỺc', { allowVnTimeGlyph: true }).text, 'Long Phước');
+assert.equal(normalizeVietnameseText('PhưỺc', { allowVnTimeGlyph: true }).text, 'Phước');
 assert.equal(normalizeVietnameseText('Thỹ HỜng', { allowVnTimeGlyph: true }).text, 'Thị Hồng');
-assert.equal(normalizeVietnameseText('Ýng Lê QuỘc Hùng', { allowVnTimeGlyph: true }).text, 'Ông Lê Quốc Hùng');
-assert.equal(normalizeVietnameseText('Đường tỰnh 868, khu phỘ 2, phường Cai Lậy, tỰnh ĐỜng Tháp', { allowVnTimeGlyph: true }).text,
-  'Đường tỉnh 868, khu phố 2, phường Cai Lậy, tỉnh Đồng Tháp');
+assert.equal(normalizeVietnameseText('Ýng QuỘc', { allowVnTimeGlyph: true }).text, 'Ông Quốc');
+assert.equal(normalizeVietnameseText('Đường tỰnh, khu phỘ, tỰnh ĐỜng', { allowVnTimeGlyph: true }).text,
+  'Đường tỉnh, khu phố, tỉnh Đồng');
 assert.equal(normalizeVietnameseText('Thỹ Hồng').text, 'Thỹ Hồng');
-assert.equal(normalizeVietnameseText('Nguyễn VĒn Bé', { allowVnTimeGlyph: true }).text, 'Nguyễn Văn Bé');
+assert.equal(normalizeVietnameseText('VĒn', { allowVnTimeGlyph: true }).text, 'Văn');
 
 const zip = new PizZip();
 zip.file('word/document.xml', '<w:document><w:r><w:rPr><w:rFonts w:asciiTheme="minorHAnsi" w:hAnsi="Arial" w:eastAsia="SimSun" w:cs="VNI-Times"/></w:rPr><w:t>aù</w:t></w:r></w:document>');

@@ -21,6 +21,7 @@ node_modules/
 tools/*
 !tools/audit_syntax.mjs
 !tools/check_dom_ids.mjs
+!tools/capture_docs.mjs
 !tools/run_all_tests.mjs
 !tools/test_data_sync_back.mjs
 !tools/test_docx_gen.mjs
