@@ -176,7 +176,7 @@ const legacyVniGlyphPatterns = [
 // khi rời font), khác với chuỗi TCVN3 một byte. Bảng này chỉ được dùng khi
 // đoạn có chữ ký glyph; tuyệt đối không áp cho Unicode bình thường.
 const vnTimeGlyphMap = new Map([
-  ['Ę', 'Đ'], ['Ý', 'Ô'], ['ỹ', 'ị'], ['Ờ', 'ồ'], ['Ộ', 'ố'],
+  ['Ę', 'Đ'], ['Ē', 'ă'], ['Ý', 'Ô'], ['ỹ', 'ị'], ['Ờ', 'ồ'], ['Ộ', 'ố'],
   ['Ự', 'ỉ'], ['Ỻ', 'ớ'], ['Ỡ', 'ệ'], ['Ợ', 'ổ'], ['Ủ', 'ễ']
 ]);
 const vnTimeGlyphSignature = new RegExp(`[${[...vnTimeGlyphMap.keys()].join('')}]`);
@@ -193,7 +193,8 @@ function hasVnTimeGlyphSignature(text) {
 }
 
 export function vnTimeGlyphToUnicode(value) {
-  return [...String(value ?? '')].map(char => vnTimeGlyphMap.get(char) || char).join('').normalize('NFC');
+  const text = String(value ?? '');
+  return [...text].map(char => vnTimeGlyphMap.get(char) || char).join('').normalize('NFC');
 }
 
 export function legacyVniGlyphToUnicode(value) {
@@ -241,7 +242,6 @@ export function detectFragmentEncoding(value) {
   const text = String(value ?? '');
   if (!text) return 'UNICODE';
 
-  if (hasVnTimeGlyphSignature(text)) return 'VNTIME_GLYPH';
   if (hasLegacyVniGlyphPattern(text)) return 'VNI_GLYPH';
 
   const vniScore = countMatches(text, vniSignatureRegex);
@@ -256,13 +256,15 @@ export function detectFragmentEncoding(value) {
 }
 
 /** Chuẩn hóa an toàn một giá trị cho Word: VNI/TCVN3 đặc trưng -> Unicode NFC. */
-export function normalizeVietnameseText(value) {
+export function normalizeVietnameseText(value, { allowVnTimeGlyph = false } = {}) {
   if (value === null || value === undefined) {
     return { text: '', encoding: 'UNICODE', converted: false };
   }
 
   const original = String(value);
-  const encoding = detectFragmentEncoding(original);
+  const encoding = allowVnTimeGlyph && hasVnTimeGlyphSignature(original)
+    ? 'VNTIME_GLYPH'
+    : detectFragmentEncoding(original);
   const converted = encoding === 'VNI'
     ? vniToUnicode(original)
     : encoding === 'TCVN3'

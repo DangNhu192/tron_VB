@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 
 const testSuites = [
+  { name: 'XLSX Unicode Source Preservation', script: 'tools/test_xlsx_text.mjs' },
   { name: 'File Structure & Charset Verification', script: 'tools/verify_all.mjs' },
   { name: 'Unicode Normalization Regression', script: 'tools/test_unicode_normalization.mjs' },
   { name: 'JS Syntax & Libs Integrity Check', script: 'tools/audit_syntax.mjs' },
@@ -34,8 +35,9 @@ for (const suite of testSuites) {
 console.log('\n================================================================');
 console.log(`TỔNG KẾT: ${passCount}/${testSuites.length} BỘ KIỂM THỬ VƯỢT QUA.`);
 if (failCount === 0) {
-  console.log('KẾT QUẢ: 100% CÁC MODULE VÀ CHỨC NĂNG HOẠT ĐỘNG HOÀN HẢO!');
+  console.log('KẾT QUẢ: Các bộ kiểm thử tự động đã chạy đều đạt.');
 } else {
   console.log(`CẢNH BÁO: Còn ${failCount} bài test thất bại.`);
 }
 console.log('================================================================');
+process.exitCode = failCount ? 1 : 0;

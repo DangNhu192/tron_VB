@@ -1,47 +1,12 @@
 'use strict';
 
 import { extractTableDataFromDocx } from '../core/docx-xml.js';
-import { normalizeVietnameseText } from '../core/charset.js';
+import { readExcelWorkbook } from '../core/xlsx-text.js';
 
 function getXLSX() {
   if (typeof XLSX !== 'undefined') return XLSX;
   if (typeof window !== 'undefined' && window.XLSX) return window.XLSX;
   throw new Error("Thư viện SheetJS (XLSX) chưa được nạp.");
-}
-
-function parseLegacyFontNames(rawBuffer, sheetIndex) {
-  const PizZipLib = getPizZip();
-  const zip = new PizZipLib(rawBuffer);
-  const stylesXml = zip.file('xl/styles.xml')?.asText() || '';
-  const fonts = [...stylesXml.matchAll(/<font>([\s\S]*?)<\/font>/g)]
-    .map(match => (match[1].match(/<name val="([^"]+)"\/?\s*>/) || [])[1] || '');
-  const cellXfsXml = (stylesXml.match(/<cellXfs[^>]*>([\s\S]*?)<\/cellXfs>/) || [])[1] || '';
-  const styleFonts = [...cellXfsXml.matchAll(/<xf\b[^>]*>/g)]
-    .map(match => fonts[Number((match[0].match(/\bfontId="(\d+)"/) || [])[1])] || '');
-  const sheetXml = zip.file(`xl/worksheets/sheet${sheetIndex + 1}.xml`)?.asText() || '';
-  const cellFonts = new Map();
-  for (const match of sheetXml.matchAll(/<c\b([^>]*)>/g)) {
-    const address = (match[1].match(/\br="([A-Z]+\d+)"/) || [])[1];
-    const styleId = Number((match[1].match(/\bs="(\d+)"/) || [])[1]);
-    if (address && Number.isInteger(styleId) && styleFonts[styleId]) {
-      cellFonts.set(address, styleFonts[styleId]);
-    }
-  }
-  return cellFonts;
-}
-
-function normalizeLegacyWorksheetCells(worksheet, cellFonts) {
-  for (const [address, fontName] of cellFonts) {
-    const cell = worksheet[address];
-    if (!cell || typeof cell.v !== 'string') continue;
-    const isLegacyFont = /^(?:\.vntime|vni[-\s])/i.test(fontName);
-    if (!isLegacyFont) continue;
-    const normalized = normalizeVietnameseText(cell.v);
-    if (normalized.converted) {
-      cell.v = normalized.text;
-      cell.w = normalized.text;
-    }
-  }
 }
 
 /**
@@ -61,7 +26,7 @@ export async function parseLocalDataFile(file, selectedSheetName = null) {
   }
 
   const XLSXLib = getXLSX();
-  const workbook = XLSXLib.read(buffer, { type: 'array' });
+  const workbook = readExcelWorkbook(buffer, XLSXLib);
   const sheetNames = workbook.SheetNames;
   const sheetGrp = document.getElementById('excelSheetGroup');
   const sheetSelect = document.getElementById('excelSheetSelect');
@@ -83,14 +48,9 @@ export async function parseLocalDataFile(file, selectedSheetName = null) {
   const worksheet = workbook.Sheets[targetSheetName];
   if (!worksheet) throw new Error(`Không tìm thấy Sheet "${targetSheetName}".`);
 
-  // SheetJS không giữ font name trên từng cell. Đọc style XML để chỉ chuyển mã
-  // ở các ô dùng font legacy, tránh làm hỏng dữ liệu Unicode trong cùng workbook.
-  const selectedSheetIndex = sheetNames.indexOf(targetSheetName);
-  try {
-    normalizeLegacyWorksheetCells(worksheet, parseLegacyFontNames(buffer, selectedSheetIndex));
-  } catch (error) {
-    console.warn('Không đọc được font cell từ Excel; tiếp tục bằng nhận diện nội dung.', error);
-  }
+  // Bảo toàn tuyệt đối giá trị XML từ Excel. Tên font trong styles.xml không
+  // đủ để kết luận bảng mã: workbook Unicode vẫn có thể chứa style .VnTime cũ.
+  // Chuyển mã legacy chỉ nên là thao tác người dùng chủ động, không tự chạy lúc import.
 
   const rawData = XLSXLib.utils.sheet_to_json(worksheet, { defval: "" });
   if (!rawData || rawData.length === 0) {

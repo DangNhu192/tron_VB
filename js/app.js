@@ -18,8 +18,7 @@ import {
 } from './core/constants.js';
 
 import {
-  keepOriginalText,
-  normalizeVietnameseText
+  keepOriginalText
 } from './core/charset.js';
 
 import {
@@ -87,15 +86,12 @@ let currentTemplateVars = [];
 let currentTemplateText = '';
 let currentPreviewHeaders = [];
 
-// Chuẩn hóa lần cuối ngay trước khi gửi sang Worker, bao gồm dữ liệu vừa dán/sửa ở bảng xem trước.
+// Unicode NFC for Word, without guessing legacy encodings or trimming source data.
 function normalizeRowsForWord(rows) {
   return rows.map(row => {
     const normalizedRow = {};
     for (const [key, value] of Object.entries(row)) {
-      const normalizedKey = normalizeVietnameseText(key).text;
-      normalizedRow[normalizedKey] = typeof value === 'string'
-        ? normalizeVietnameseText(value).text
-        : value;
+      normalizedRow[key] = typeof value === 'string' ? value.normalize('NFC') : value;
     }
     return normalizedRow;
   });
@@ -1499,24 +1495,10 @@ async function initApp() {
           }
         }
 
-        if (rawData && rawData.length > 0) {
-          rawData = rawData.map(row => {
-            const convertedRow = {};
-            for (const key in row) {
-              const normalizedKey = normalizeVietnameseText(key).text;
-              const value = row[key];
-              convertedRow[normalizedKey] = typeof value === 'string'
-                ? normalizeVietnameseText(value).text
-                : value;
-            }
-            return convertedRow;
-          });
-        }
-
         const headers = (isDataLinkSource && rawData.length > 0) 
-          ? Object.keys(rawData[0]).map(h => keepOriginalText(h)) 
+          ? Object.keys(rawData[0])
           : ((dataFile && rawData.length > 0) 
-            ? Object.keys(rawData[0]).map(h => keepOriginalText(h)) 
+            ? Object.keys(rawData[0])
             : varList);
 
         activeDataSourceOrigin = {

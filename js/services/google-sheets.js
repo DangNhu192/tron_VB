@@ -1,6 +1,7 @@
 'use strict';
 
 import { extractTableDataFromDocx } from '../core/docx-xml.js';
+import { readExcelWorkbook } from '../core/xlsx-text.js';
 
 function getXLSX() {
   if (typeof XLSX !== 'undefined') return XLSX;
@@ -101,7 +102,7 @@ export const GoogleSheetsManager = {
     const XLSXLib = getXLSX();
     const workbook = XLSXLib.read(csvText, { type: 'string' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rawData = XLSXLib.utils.sheet_to_json(sheet, { defval: "" });
+    let rawData = XLSXLib.utils.sheet_to_json(sheet, { defval: "" });
 
     if (!rawData || rawData.length === 0) {
       throw new Error("Google Sheet không có dữ liệu hoặc không đúng cấu trúc bảng.");
@@ -158,7 +159,7 @@ export const GoogleSheetsManager = {
     } else {
       try {
         const XLSXLib = getXLSX();
-        const workbook = XLSXLib.read(buffer, { type: 'array' });
+        const workbook = readExcelWorkbook(buffer, XLSXLib);
         const targetSheet = (sheetName && workbook.Sheets[sheetName]) ? sheetName : workbook.SheetNames[0];
         if (!targetSheet || !workbook.Sheets[targetSheet]) {
           throw new Error(`Không tìm thấy Sheet "${sheetName || ''}" trong file Excel.`);
