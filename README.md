@@ -1,6 +1,6 @@
 # AutoDoc 2.0 — Tạo văn bản Word từ bảng dữ liệu
 
-<img src="Logo.png" alt="Logo AutoDoc" width="88">
+<img src="Logo.png" alt="Logo AutoDoc" width="388">
 
 AutoDoc giúp tạo nhiều văn bản Word từ một mẫu `.docx` và các dòng trong bảng
 dữ liệu. Tiện ích đọc Excel, CSV, bảng trong file Word và Google Sheets; bạn
