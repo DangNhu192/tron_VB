@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AutoDoc Pro — Trợ lý Xuất Văn Bản</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/app.css">
+  <script src="libs/xlsx.full.min.js"></script>
+  <script src="libs/pizzip.min.js"></script>
+  <script src="libs/docxtemplater.js"></script>
+  <script src="libs/jszip.min.js"></script>
+</head>
+<body>
+
+  <!-- ─── APP HEADER ─── -->
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+      </div>
+      <span>AutoDoc Pro</span>
+    </div>
+    <span class="version">v2.0</span>
+
+    <!-- NAVIGATION TABS -->
+    <nav class="nav-tabs" id="mainNavTabs" role="tablist">
+      <button class="nav-tab active" data-view="viewWorkspace" id="tabWorkspace" role="tab" aria-selected="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+        <span>Tạo Văn Bản</span>
+      </button>
+      <button class="nav-tab" data-view="viewTemplates" id="tabTemplates" role="tab" aria-selected="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <span>Thư Viện Mẫu</span>
+      </button>
+      <button class="nav-tab" data-view="viewData" id="tabData" role="tab" aria-selected="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+          <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+          <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+        </svg>
+        <span>Nguồn Dữ Liệu</span>
+      </button>
+      <button class="nav-tab" data-view="viewSettings" id="tabSettings" role="tab" aria-selected="false">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        <span>Cài Đặt</span>
+      </button>
+    </nav>
+
+    <div class="header-spacer"></div>
+
+    <!-- HEADER UTILITIES -->
+    <div class="header-actions">
+      <button id="historyBtn" class="guide-btn" title="Lịch sử tạo văn bản">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <span>Lịch sử</span>
+      </button>
+      <button id="themeToggleBtn" class="guide-btn" title="Chuyển chế độ Sáng / Tối">
+        <svg id="themeIconSun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="themeIconMoon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+        <span id="themeLabel">Giao diện</span>
+      </button>
+      <button id="openGuideBtn" class="guide-btn" title="Hướng dẫn sử dụng">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        <span>Hướng dẫn</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ─── MAIN CONTAINER ─── -->
+  <main class="app-container">
+
+    <!-- =============================================================== -->
+    <!-- VIEW 1: WORKSPACE (TẠO VĂN BẢN) -->
+    <!-- =============================================================== -->
+    <section id="viewWorkspace" class="view-panel active">
+      <div class="workspace-grid">
+
+        <!-- CARD 1: CHỌN MẪU WORD -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-badge">1</div>
+            <div>
+              <div class="step-title-text">Chọn Mẫu Văn Bản Word</div>
+              <div class="step-desc-text">Mẫu file .docx chuẩn thể thức chứa các biến tag {ten_bien}</div>
+            </div>
+          </div>
+
+          <!-- Segmented source switch -->
+          <div class="segmented-switch">
+            <button type="button" class="segmented-btn active" id="srcLibBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              Từ Thư Viện
+            </button>
+            <button type="button" class="segmented-btn" id="srcUploadBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Tải File Lên
+            </button>
+          </div>
+
+          <!-- PANEL: TỪ THƯ VIỆN -->
+          <div id="srcLibPanel">
+            <div class="form-group">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <label style="margin-bottom:0;">Mẫu có sẵn trong Thư viện:</label>
+                <button type="button" id="manageCatBtn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.72rem;">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                  Danh mục
+                </button>
+              </div>
+              <select id="tplLibSelect" class="config-select">
+                <option value="">-- Bấm để chọn mẫu văn bản --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- PANEL: UPLOAD FILE TRỰC TIẾP -->
+          <div id="srcUploadPanel" style="display: none;">
+            <div class="form-group">
+              <div class="file-drop" id="docTemplateDropZone">
+                <input type="file" id="docTemplate" accept=".docx">
+                <div class="fd-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                </div>
+                <div class="fd-hint">Kéo thả file Word (.docx) hoặc bấm để chọn</div>
+                <div class="fd-name" id="docTemplateName"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nút rà soát mẫu và tạo dữ liệu (Excel / Word / Google Sheet) -->
+          <button type="button" class="btn btn-secondary" id="auditTemplateBtn" style="width:100%; margin-top:auto; padding: 10px; display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            Rà Soát Mẫu & Tạo Cột Dữ Liệu
+          </button>
+        </div>
+
+        <!-- CARD 2: CHỌN NGUỒN DỮ LIỆU -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-badge">2</div>
+            <div>
+              <div class="step-title-text">Chọn Nguồn Dữ Liệu</div>
+              <div class="step-desc-text">File Excel, CSV hoặc Google Sheets chứa các cột tương ứng</div>
+            </div>
+          </div>
+
+          <!-- Segmented source switch -->
+          <div class="segmented-switch">
+            <button type="button" class="segmented-btn active" id="dataSourceUploadBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Tải File Lên
+            </button>
+            <button type="button" class="segmented-btn" id="dataSourceLinkBtn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+              Từ Thư Viện
+            </button>
+          </div>
+
+          <!-- PANEL: TẢI FILE EXCEL LÊN -->
+          <div id="dataUploadPanel">
+            <div class="form-group">
+              <div class="file-drop" id="excelDropZone">
+                <input type="file" id="excelData" accept=".xlsx, .xls, .csv, .docx">
+                <div class="fd-icon">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="3" y1="15" x2="21" y2="15"></line>
+                    <line x1="9" y1="3" x2="9" y2="21"></line>
+                    <line x1="15" y1="3" x2="15" y2="21"></line>
+                  </svg>
+                </div>
+                <div class="fd-hint">Kéo thả file Excel (.xlsx, .xls, .csv) hoặc bấm để chọn</div>
+                <div class="fd-name" id="excelDataName"></div>
+              </div>
+            </div>
+            
+            <div id="excelSheetGroup" class="form-group" style="display: none;">
+              <label>Chọn Trang Tính (Sheet):</label>
+              <select id="excelSheetSelect" class="config-select"></select>
+            </div>
+          </div>
+
+          <!-- PANEL: TỪ THƯ VIỆN DỮ LIỆU -->
+          <div id="dataLinkPanel" style="display: none;">
+            <div class="form-group">
+              <label>Nguồn Dữ Liệu Đã Lưu (Google Sheets / File):</label>
+              <select id="dataLibSelect" class="config-select">
+                <option value="">-- Bấm để chọn nguồn dữ liệu --</option>
+              </select>
+            </div>
+            <div class="note">
+              💡 Bạn có thể thêm link Google Sheets hoặc bộ dữ liệu thường dùng trong tab <b>"Nguồn Dữ Liệu"</b> để tái sử dụng nhiều lần không cần tải file lên lại.
+            </div>
+          </div>
+        </div>
+
+        <!-- HERO ACTION BAR (TẠO VĂN BẢN) -->
+        <div class="workspace-full">
+          <div class="hero-action-card">
+            <div class="action-row">
+              <div class="action-config-col">
+                <div style="flex: 2;">
+                  <label for="fileNameFormat">Quy tắc đặt tên file xuất:</label>
+                  <input type="text" id="fileNameFormat" class="config-input" placeholder="VD: [So_GPMT]_[Ten_Du_An]">
+                  <div class="note">Dùng <b>[Tên_Cột]</b> để chèn dữ liệu tự động. Ví dụ: <i>[So_GPMT]_[Ten_Co_So]</i></div>
+                </div>
+                <div style="flex: 1.2; min-width: 170px;">
+                  <label for="batchExportModeSelect">Chế độ xuất hàng loạt:</label>
+                  <select id="batchExportModeSelect" class="config-select">
+                    <option value="merged" selected>📄 Gộp chung 1 file duy nhất (.docx)</option>
+                    <option value="individual">📑 Tải từng file riêng lẻ (.docx)</option>
+                    <option value="zip">📦 Đóng gói file nén (.zip)</option>
+                  </select>
+                </div>
+                <div style="flex: 0.9; min-width: 130px;">
+                  <label for="exportFormatSelect">Định dạng xuất:</label>
+                  <select id="exportFormatSelect" class="config-select">
+                    <option value="docx" selected>Word (.docx)</option>
+                    <option value="pdf">PDF (.pdf)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <button type="button" id="processBtn" class="btn-process-main">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                  </svg>
+                  TẠO VĂN BẢN HÀNG LOẠT
+                </button>
+              </div>
+            </div>
+
+            <div class="progress-track" id="progressTrack">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div class="status-log" id="status"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- VIEW 2: THƯ VIỆN MẪU (TEMPLATES) -->
+    <!-- =============================================================== -->
+    <section id="viewTemplates" class="view-panel">
+      <div class="manager-grid">
+        
+        <!-- SIDEBAR: THÊM MẪU MỚI -->
+        <div class="manager-sidebar">
+          <div class="card-title" style="margin-bottom: 16px; font-weight: 700; font-size: 1rem;">
+            Thêm Mẫu Mới Vào Thư Viện
+          </div>
+
+          <div class="form-group">
+            <label for="tplNameInput">Tên Mẫu Văn Bản:</label>
+            <input type="text" id="tplNameInput" class="config-input" placeholder="VD: Quyết định phê duyệt ĐTM 2026...">
+          </div>
+
+          <div class="form-group">
+            <label for="tplCategorySelect">Danh Mục Phân Loại:</label>
+            <select id="tplCategorySelect" class="config-select">
+              <option value="">-- Mặc định --</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Chọn File Mẫu (.docx):</label>
+            <div class="file-drop" id="tplFileDropZone">
+              <input type="file" id="tplFileInput" accept=".docx">
+              <div class="fd-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="fd-hint">Kéo thả hoặc bấm để chọn file .docx</div>
+              <div class="fd-name" id="tplFileName"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="tplLinkInput">Hoặc Liên kết Google Drive / URL:</label>
+            <div style="display:flex; gap: 8px;">
+              <input type="text" id="tplLinkInput" class="config-input" placeholder="https://drive.google.com/...">
+              <button type="button" id="tplLinkImportBtn" class="btn btn-secondary" style="white-space:nowrap;">
+                Tải
+              </button>
+            </div>
+          </div>
+
+          <div id="tplSaveRow" style="display:flex; gap:10px; margin-top: 18px;">
+            <button type="button" id="tplSaveBtn" class="btn btn-primary" style="flex:1;">
+              Lưu Vào Thư Viện
+            </button>
+            <button type="button" id="tplCancelBtn" class="btn btn-secondary" style="display:none;">
+              Hủy
+            </button>
+          </div>
+        </div>
+
+        <!-- CONTENT: DANH SÁCH MẪU -->
+        <div class="manager-content">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; flex-wrap:wrap; gap:10px;">
+            <div style="font-weight:700; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+              Mẫu Văn Bản Đã Lưu
+              <span class="badge" id="tplCount">0</span>
+            </div>
+            <div style="flex: 1; max-width: 320px;">
+              <input type="text" id="tplSearchInput" class="config-input" placeholder="Tìm kiếm theo tên mẫu...">
+            </div>
+          </div>
+
+          <div id="tplCatFilterBar" class="cat-filter-chips" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;"></div>
+
+          <div id="templateList" class="tpl-list">
+            <!-- Danh sách mẫu được render động bởi JS -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- VIEW 3: NGUỒN DỮ LIỆU (DATA) -->
+    <!-- =============================================================== -->
+    <section id="viewData" class="view-panel">
+      <div class="manager-grid">
+
+        <!-- SIDEBAR: THÊM NGUỒN DỮ LIỆU MỚI -->
+        <div class="manager-sidebar">
+          <div class="card-title" style="margin-bottom: 16px; font-weight: 700; font-size: 1rem;">
+            Thêm Nguồn Dữ Liệu Mới
+          </div>
+
+          <!-- Sub switcher: Link Google Sheets / Liên Kết File Excel / File Máy Tính -->
+          <div class="segmented-switch">
+            <button type="button" class="segmented-btn active" id="dataSrcLinkBtn" style="font-size: 0.78rem; padding: 6px 4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+              Google Sheets
+            </button>
+            <button type="button" class="segmented-btn" id="dataSrcExcelLinkBtn" style="font-size: 0.78rem; padding: 6px 4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              Link Excel / Docx
+            </button>
+            <button type="button" class="segmented-btn" id="dataSrcLocalBtn" style="font-size: 0.78rem; padding: 6px 4px;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              File Máy Tính
+            </button>
+          </div>
+
+          <!-- PANEL: LINK GOOGLE SHEETS -->
+          <div id="dataSrcLinkPanel">
+            <div class="form-group">
+              <label for="dataLibNameInput">Tên Lưu Trữ Dữ Liệu:</label>
+              <input type="text" id="dataLibNameInput" class="config-input" placeholder="VD: Bảng lương Q1/2026...">
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label for="dataLinkInput" style="margin-bottom: 0;">Link Google Sheets:</label>
+                <button type="button" id="openDriveSheetBtn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Mở Google Drive để chọn Sheet từ tài khoản hiện tại">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  Chọn từ Drive
+                </button>
+              </div>
+              <input type="text" id="dataLinkInput" class="config-input" placeholder="https://docs.google.com/spreadsheets/d/...">
+            </div>
+
+            <div class="form-group">
+              <label for="dataSheetNameInput">Tên Trang Tính (Sheet Name - để trống sẽ lấy sheet 1):</label>
+              <input type="text" id="dataSheetNameInput" class="config-input" placeholder="VD: Trang tính1">
+            </div>
+
+            <div class="form-hint" style="margin-top: -6px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-muted);">
+              💡 Tự động sử dụng phiên tài khoản Google đã đăng nhập trên trình duyệt. Luôn nạp dữ liệu mới nhất trực tiếp khi tạo văn bản.
+            </div>
+
+            <button type="button" id="dataLinkImportBtn" class="btn btn-primary" style="width: 100%; margin-top: 6px;">
+              Lưu Google Sheets Vào Thư Viện
+            </button>
+          </div>
+
+          <!-- PANEL: LIÊN KẾT FILE EXCEL / WORD DOCX (CLOUD / WEB / DRIVE) -->
+          <div id="dataSrcExcelLinkPanel" style="display: none;">
+            <div class="form-group">
+              <label for="dataExcelLibNameInput">Tên Lưu Trữ Dữ Liệu:</label>
+              <input type="text" id="dataExcelLibNameInput" class="config-input" placeholder="VD: Danh sách khách hàng (.xlsx / .docx)...">
+            </div>
+
+            <div class="form-group">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <label for="dataExcelLinkInput" style="margin-bottom: 0;">Link File Excel / Word (.xlsx, .docx):</label>
+                <button type="button" id="openDriveExcelBtn" class="btn btn-secondary" style="padding: 2px 8px; font-size: 0.75rem; display: inline-flex; align-items: center; gap: 4px;" title="Mở Google Drive để chọn file Excel hoặc Word">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  Chọn từ Drive
+                </button>
+              </div>
+              <input type="text" id="dataExcelLinkInput" class="config-input" placeholder="Dán link Google Drive chia sẻ, OneDrive, hoặc URL file .xlsx, .docx...">
+            </div>
+
+            <div class="form-group">
+              <label for="dataExcelSheetNameInput">Tên Sheet Cần Đọc (Nếu có - với file Word có thể để trống):</label>
+              <input type="text" id="dataExcelSheetNameInput" class="config-input" placeholder="Để trống nếu lấy Sheet / Bảng đầu tiên">
+            </div>
+
+            <div class="form-hint" style="margin-top: -6px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-muted);">
+              💡 Lưu đường dẫn liên kết, dữ liệu được tải và giải mã trực tiếp trong RAM khi xuất văn bản, hỗ trợ cả bảng tính Excel và bảng biểu trong file Word (.docx).
+            </div>
+
+            <button type="button" id="dataExcelSaveBtn" class="btn btn-primary" style="width: 100%; margin-top: 6px;">
+              Lưu Liên Kết Vào Thư Viện
+            </button>
+          </div>
+
+          <!-- PANEL: FILE TRÊN MÁY TÍNH (LƯU VỊ TRÍ FILE / HANDLE) -->
+          <div id="dataSrcLocalPanel" style="display: none;">
+            <div class="form-group">
+              <label for="dataLocalNameInput">Tên Lưu Trữ Dữ Liệu:</label>
+              <input type="text" id="dataLocalNameInput" class="config-input" placeholder="VD: Bảng số liệu lưu trên máy...">
+            </div>
+
+            <div class="form-group">
+              <label>Vị Trí File Trên Máy Tính (.xlsx, .docx, .csv):</label>
+              <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 6px;">
+                <button type="button" id="dataLocalPickBtn" class="btn btn-secondary" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; font-weight: 600;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                  Chọn File Từ Máy Tính (.xlsx, .docx)
+                </button>
+                <input type="file" id="dataLocalFileInput" accept=".xlsx, .xls, .csv, .docx" style="display: none;">
+              </div>
+              <div id="dataLocalFileName" style="font-size: 0.8rem; color: var(--primary); font-weight: 500; min-height: 20px;"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="dataLocalSheetNameInput">Tên Sheet Cần Đọc (Nếu có):</label>
+              <input type="text" id="dataLocalSheetNameInput" class="config-input" placeholder="Để trống nếu lấy Sheet / Bảng đầu tiên">
+            </div>
+
+            <div class="form-hint" style="margin-top: -6px; margin-bottom: 12px; font-size: 0.78rem; color: var(--text-muted);">
+              💡 Tiện ích lưu vị trí & quyền truy cập file trên máy tính. Hỗ trợ file Excel (.xlsx, .xls, .csv) và bảng dữ liệu trong file Word (.docx). Dữ liệu tự động cập nhật mỗi khi tạo văn bản.
+            </div>
+
+            <button type="button" id="dataLocalSaveBtn" class="btn btn-primary" style="width: 100%; margin-top: 6px;">
+              Lưu Nguồn File Máy Tính Vào Thư Viện
+            </button>
+          </div>
+        </div>
+
+        <!-- CONTENT: DANH SÁCH DỮ LIỆU ĐÃ LƯU -->
+        <div class="manager-content">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 16px; flex-wrap:wrap; gap:10px;">
+            <div style="font-weight:700; font-size:1.05rem; display:flex; align-items:center; gap:8px;">
+              Nguồn Dữ Liệu Đã Lưu
+              <span class="badge" id="dataCount">0</span>
+            </div>
+            <div style="flex: 1; max-width: 320px;">
+              <input type="text" id="dataSearchInput" class="config-input" placeholder="Tìm kiếm nguồn dữ liệu...">
+            </div>
+          </div>
+
+          <div id="dataList" class="tpl-list">
+            <!-- Danh sách dữ liệu được render động bởi JS -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =============================================================== -->
+    <!-- VIEW 4: CÀI ĐẶT (SETTINGS) -->
+    <!-- =============================================================== -->
+    <section id="viewSettings" class="view-panel">
+      <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+
+        <!-- THIẾT LẬP XỬ LÝ -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-badge">⚙️</div>
+            <div>
+              <div class="step-title-text">Cấu Hình Xử Lý & Chuẩn Hóa Văn Bản</div>
+              <div class="step-desc-text">Các tùy chọn bảo đảm chất lượng theo quy chuẩn hành chính</div>
+            </div>
+          </div>
+
+          <div class="switch-row">
+            <div class="switch-info">
+              <div class="switch-title">Kiểm tra tính thống nhất dữ liệu</div>
+              <div class="switch-desc">Tự động phát hiện thiếu cột, lệch hoa/thường, biến rỗng hoặc trùng lặp tên file trước khi tạo</div>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" id="enableConsistencyCheck" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div class="switch-row">
+            <div class="switch-info">
+              <div class="switch-title">Chuẩn hóa font chữ về Times New Roman</div>
+              <div class="switch-desc">Tự động ép font văn bản trong Word XML về chuẩn thể thức Nghị định 30/2020/NĐ-CP</div>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" id="enableFontNormalization" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div class="switch-row">
+            <div class="switch-info">
+              <div class="switch-title">Đánh số thứ tự đầu tên file (1_, 2_, ...)</div>
+              <div class="switch-desc">Tự động gắn số thứ tự tương ứng với số hàng của bảng dữ liệu vào đầu mỗi file tạo ra</div>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" id="enablePrefixIndex" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div class="switch-row">
+            <div class="switch-info">
+              <div class="switch-title">Bỏ dấu tiếng Việt trong tên file</div>
+              <div class="switch-desc">Chuyển tên file thành tiếng Việt không dấu (chống lỗi trên các phần mềm quản trị văn bản cũ)</div>
+            </div>
+            <label class="switch-control">
+              <input type="checkbox" id="enableRemoveTones" checked>
+              <span class="switch-slider"></span>
+            </label>
+          </div>
+
+          <div style="margin-top: 20px; display: flex; align-items: center; gap: 12px;">
+            <button type="button" id="saveConfigBtn" class="btn btn-primary">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Lưu Cấu Hình
+            </button>
+            <span id="configStatus" style="font-weight: 600; color: var(--success); font-size: 0.84rem;"></span>
+          </div>
+        </div>
+
+        <!-- THIẾT LẬP DUNG LƯỢNG & SAO LƯU -->
+        <div class="step-card">
+          <div class="step-header">
+            <div class="step-badge">💾</div>
+            <div>
+              <div class="step-title-text">Dung Lượng Lưu Trữ & Sao Lưu Dữ Liệu</div>
+              <div class="step-desc-text">Quản lý bộ nhớ trình duyệt Chrome Storage và sao lưu thư viện mẫu</div>
+            </div>
+          </div>
+
+          <div class="storage-wrap">
+            <div class="storage-label">
+              <span>Bộ nhớ đã dùng trong Thư viện:</span>
+              <span id="storageUsed">0 KB / 10 MB</span>
+            </div>
+            <div class="storage-track">
+              <div class="storage-fill" id="storageFill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap;">
+            <button type="button" id="backupLibBtn" class="btn btn-secondary" style="flex: 1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Xuất Sao Lưu Toàn Bộ Thư Viện (.json)
+            </button>
+            <button type="button" id="restoreLibBtn" class="btn btn-secondary" style="flex: 1;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              Phục Hồi Dữ Liệu Từ File (.json)
+            </button>
+            <input type="file" id="restoreLibFileInput" accept=".json" style="display:none;">
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: XEM TRƯỚC DỮ LIỆU (PREVIEW TABLE) -->
+  <!-- =============================================================== -->
+  <div id="dataPreviewModal" class="modal modal-overlay" style="display: none;">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-header">
+        <div style="display:flex; align-items:center; gap: 10px; flex-wrap: wrap;">
+          <h2 class="modal-title">Bảng Xem Trước Dữ Liệu Trộn Văn Bản</h2>
+          <span id="previewStatsBadge" class="badge">0 dòng</span>
+          <span id="previewModifiedBadge" class="badge" style="display:none; background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-weight:600;">✏️ Đã có chỉnh sửa (sẽ lưu ngược vào nguồn gốc khi xuất)</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <button type="button" id="togglePreviewFullscreenBtn" title="Phóng to / Thu nhỏ bảng" style="background:none; border:1px solid var(--border); border-radius:6px; padding:5px 9px; cursor:pointer; color:var(--text-muted); display:flex; align-items:center; gap:5px; font-size:0.78rem;">
+            <svg id="fsIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            <span id="fsLabel">Phóng to</span>
+          </button>
+          <button id="closePreviewBtn" class="close-modal" aria-label="Đóng">&times;</button>
+        </div>
+      </div>
+
+      <div class="modal-body" style="padding: 14px 20px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 12px; align-items: center; flex-wrap: wrap;">
+          <input type="text" id="previewSearchInput" class="config-input" placeholder="Lọc tìm kiếm trong bảng..." style="max-width: 260px;">
+          <button type="button" id="toggleEmptyErrorBtn" class="btn btn-secondary" style="font-size: 0.78rem;">
+            Chỉ hiện dòng cảnh báo
+          </button>
+          <button type="button" id="openTransformersModalBtn" class="btn btn-secondary" style="font-size: 0.78rem;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m18 15-6-6-6 6"/></svg>
+            Bộ lọc biến đổi trường
+          </button>
+          <div style="flex:1;"></div>
+          <button type="button" id="addPreviewRowBtn" class="btn btn-secondary" style="font-size: 0.78rem;">
+            + Thêm dòng
+          </button>
+          <button type="button" id="exportPreviewDataBtn" class="btn btn-secondary" style="font-size: 0.78rem;">
+            Xuất file Excel
+          </button>
+        </div>
+
+        <div class="preview-table-wrapper" id="previewTableWrapper">
+          <table class="data-table" id="previewDataTable">
+            <!-- Headers and rows rendered dynamically -->
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; margin-bottom:0; font-size:0.8rem;">
+          <input type="checkbox" id="selectAllPreviewRows" checked>
+          Chọn tất cả các dòng để xuất
+        </label>
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div style="display:flex; align-items:center; gap:6px; font-size:0.82rem;">
+            <label for="modalBatchExportModeSelect" style="margin-bottom:0; font-weight:600; white-space:nowrap;">Chế độ xuất:</label>
+            <select id="modalBatchExportModeSelect" class="config-select" style="padding:6px 10px; font-size:0.82rem; height:auto;">
+              <option value="merged" selected>📄 Gộp chung 1 file duy nhất (.docx)</option>
+              <option value="individual">📑 Tải từng file riêng lẻ (.docx)</option>
+              <option value="zip">📦 Đóng gói file nén (.zip)</option>
+            </select>
+          </div>
+          <button type="button" id="confirmExportBtn" class="btn btn-primary" style="padding: 10px 24px;">
+            XÁC NHẬN & BẮT ĐẦU XUẤT FILE
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: CẢNH BẢO TÍNH THỐNG NHẤT DỮ LIỆU (CONSISTENCY WARNING) -->
+  <!-- =============================================================== -->
+  <div id="consistencyModal" class="modal modal-overlay" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header" style="background: var(--warning-light); color: var(--warning);">
+        <h3 class="modal-title">Phát hiện bất thường trong dữ liệu</h3>
+        <button id="closeConsistencyBtn" class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom: 12px; font-size: 0.88rem;">Hệ thống phát hiện một số điểm không tương thích giữa mẫu Word và dữ liệu Excel:</p>
+        <ul id="consistencyWarningList" style="padding-left: 20px; color: var(--error); line-height: 1.6; font-size: 0.82rem;"></ul>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelExportConsistencyBtn" class="btn btn-secondary">Quay lại kiểm tra</button>
+        <button id="bypassExportConsistencyBtn" class="btn btn-primary">Vẫn tiếp tục xuất</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: BỘ BIẾN ĐỔI TRƯỜNG DỮ LIỆU (TRANSFORMERS) -->
+  <!-- =============================================================== -->
+  <div id="transformersModal" class="modal modal-overlay" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Cấu Hình Quy Tắc Biến Đổi Dữ Liệu</h3>
+        <button id="closeTransformersBtn" class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="note" style="margin-bottom: 14px;">Chọn cách định dạng cho từng cột (viết hoa, viết thường, định dạng ngày tháng, tiền tệ...):</p>
+        <div id="transformersConfigList" style="max-height: 360px; overflow-y: auto;"></div>
+      </div>
+      <div class="modal-footer">
+        <button id="saveTransformersBtn" class="btn btn-primary">Áp Dụng Quy Tắc</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: LỊCH SỬ TẠO VĂN BẢN (HISTORY) -->
+  <!-- =============================================================== -->
+  <div id="historyModal" class="modal modal-overlay" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Lịch Sử Tạo Văn Bản</h3>
+        <button id="closeHistoryBtn" class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="historyListContainer" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: QUẢN LÝ DANH MỤC (CATEGORIES) -->
+  <!-- =============================================================== -->
+  <div id="categoryModal" class="modal modal-overlay" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3 class="modal-title">Quản Lý Danh Mục Mẫu</h3>
+        <button id="closeCategoryBtn" class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:flex; gap: 8px; margin-bottom: 14px;">
+          <input type="text" id="newCatNameInput" class="config-input" placeholder="Tên danh mục mới...">
+          <button id="addCatBtn" class="btn btn-primary" style="white-space:nowrap;">Thêm mới</button>
+        </div>
+        <div id="categoryListContainer" style="max-height: 300px; overflow-y: auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: RÀ SOÁT MẪU VĂN BẢN & TẠO CỘT DỮ LIỆU (AUDIT TEMPLATE) -->
+  <!-- =============================================================== -->
+  <div id="templateAuditModal" class="modal modal-overlay" style="display: none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title" style="display: flex; align-items: center; gap: 8px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              <path d="M11 8v6"></path>
+              <path d="M8 11h6"></path>
+            </svg>
+            Rà Soát Mẫu Văn Bản & Cấu Trúc Dữ Liệu
+          </h3>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+            File mẫu: <b id="auditTplName" style="color: var(--text-main);">-</b> • Tìm thấy: <b id="auditVarCount" style="color: var(--primary);">0 biến</b>
+          </div>
+        </div>
+        <button id="closeAuditModalBtn" class="close-modal">&times;</button>
+      </div>
+
+      <div class="modal-body" style="padding: 16px 20px;">
+        <!-- Cảnh báo cú pháp nếu có -->
+        <div id="auditWarningBox" style="display: none; background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;">
+          <div style="display: flex; align-items: center; gap: 8px; color: #b45309; font-weight: 600; font-size: 0.85rem; margin-bottom: 4px;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            Cảnh báo cú pháp thẻ trong file mẫu:
+          </div>
+          <div id="auditWarningText" style="font-size: 0.82rem; color: #92400e; line-height: 1.5;"></div>
+        </div>
+
+        <!-- Tùy chọn cột bổ trợ -->
+        <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+          <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-main);">Cột tự động bổ sung:</span>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer;">
+            <input type="checkbox" id="auditOptSTT" checked>
+            <span>Cột <b>STT</b> (Số thứ tự)</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer;">
+            <input type="checkbox" id="auditOptCheckDL" checked>
+            <span>Cột <b>Check DL</b> (Giá trị TRUE)</span>
+          </label>
+        </div>
+
+        <!-- Danh sách biến tìm thấy -->
+        <div style="font-size: 0.82rem; font-weight: 600; margin-bottom: 8px; color: var(--text-main);">Danh sách các trường biến số phát hiện trong mẫu:</div>
+        <div id="auditVarList" style="max-height: 260px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 8px;"></div>
+
+        <!-- Hướng dẫn điền Google Sheet khi tạo mới -->
+        <div id="auditSheetGuideBox" style="display: none; background: #0f172a; color: #f8fafc; border: 2px solid #10b981; border-radius: 8px; padding: 14px; margin-top: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+            <div style="font-weight: 700; font-size: 0.9rem; color: #34d399; display: flex; align-items: center; gap: 8px;">
+              <span>🚀 Đã sao chép sẵn dữ liệu & mở tab Google Sheet!</span>
+            </div>
+            <button type="button" id="closeAuditSheetGuideBtn" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer;">✕</button>
+          </div>
+          <div style="font-size: 0.82rem; line-height: 1.6; color: #e2e8f0;">
+            <div>👉 <b>Bước 1:</b> Sang tab <b>Google Sheet</b> vừa được mở.</div>
+            <div>👉 <b>Bước 2:</b> Nhấp chuột chọn ô <b>A1</b>.</div>
+            <div>👉 <b>Bước 3:</b> Nhấn phím <kbd style="background: #334155; color: #38bdf8; padding: 2px 6px; border-radius: 4px; font-weight: bold; border: 1px solid #475569;">Ctrl + V</kbd> (hoặc Cmd + V) để dán toàn bộ các cột & dòng mẫu.</div>
+            <div>👉 <b>Bước 4:</b> Nhấn nút <i>"Lưu Link Sheet Vào AutoDoc"</i> trên thanh trợ lý nổi ở đầu trang tính để dùng ngay!</div>
+          </div>
+          <div style="margin-top: 10px; font-size: 0.78rem; color: #94a3b8; border-top: 1px solid #334155; padding-top: 8px;">
+            💡 <b>Mẹo tải file sẵn nội dung 100%:</b> Nếu muốn có file chứa sẵn dữ liệu không cần dán, bạn chỉ cần bấm nút <b>"Xuất File Excel (.xlsx)"</b> rồi tải/kéo thả file đó vào Google Drive!
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <button type="button" id="closeAuditModalFooterBtn" class="btn btn-secondary">Đóng</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button type="button" id="auditExportExcelBtn" class="btn btn-success" style="display: flex; align-items: center; gap: 6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Xuất File Excel (.xlsx)
+          </button>
+          <button type="button" id="auditExportDocxBtn" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+            Xuất Bảng Word (.docx)
+          </button>
+          <button type="button" id="auditExportSheetBtn" class="btn" style="background: #10b981; color: white; border: none; display: flex; align-items: center; gap: 6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+            Tạo Google Sheet Mới
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============================================================== -->
+  <!-- MODAL: HƯỚNG DẪN SỬ DỤNG (GUIDE) -->
+  <!-- =============================================================== -->
+  <div id="guideModal" class="modal modal-overlay" style="display: none;">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-header">
+        <h3 class="modal-title">Hướng Dẫn Sử Dụng AutoDoc Pro</h3>
+        <button id="closeGuideBtn" class="close-modal">&times;</button>
+      </div>
+      <div class="modal-body" style="font-size: 0.88rem; line-height: 1.7; max-height: 540px; overflow-y: auto;">
+        <h4 style="color:var(--primary); margin-bottom:6px;">1. Quy chuẩn đặt biến trong file Word mẫu</h4>
+        <p>Đặt tên biến trong dấu 2 ngoặc nhọn, ví dụ: <code>{"{"}So_Van_Ban{"}"}</code>, <code>{"{"}Ten_Co_So{"}"}</code>, <code>{"{"}Ngay_Ban_Hanh{"}"}</code>.</p>
+        <p>Hệ thống hỗ trợ quét biến trong cả <b>thân văn bản</b>, <b>Header</b>, <b>Footer</b> và <b>Bảng biểu (Tables)</b>.</p>
+
+        <h4 style="color:var(--primary); margin-top:16px; margin-bottom:6px;">2. Chuẩn bị file Excel / Google Sheets</h4>
+        <p>Dòng đầu tiên của file dữ liệu phải là tiêu đề cột, tương ứng với các biến trong file Word (không phân biệt chữ hoa/thường).</p>
+        <p>Để lọc chỉ xuất những dòng mong muốn, tạo thêm cột <code>Check DL</code> và điền <code>TRUE</code>.</p>
+
+        <h4 style="color:var(--primary); margin-top:16px; margin-bottom:6px;">3. Tự động chuẩn hóa font & Bỏ dấu tiếng Việt</h4>
+        <p>Tính năng ép font Times New Roman tự động theo Nghị định 30/2020/NĐ-CP giúp văn bản luôn đúng chuẩn thể thức hành chính nhà nước.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- APPLICATION ENTRYPOINT (ES MODULE) -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

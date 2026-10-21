@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "AutoDoc - Trợ lý Xuất Văn Bản Pro",
+  "version": "2.0",
+  "description": "Hệ thống tạo văn bản hàng loạt v2.0 - Kiến trúc module ES6, Side Panel Chrome, Web Worker ngầm, chuẩn hóa Times New Roman & Google Sheets",
+  "permissions": [
+    "downloads",
+    "storage",
+    "unlimitedStorage",
+    "identity",
+    "tabs",
+    "scripting",
+    "sidePanel",
+    "contextMenus",
+    "clipboardRead",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "*://*.google.com/*",
+    "*://*.googleapis.com/*",
+    "*://*.googleusercontent.com/*"
+  ],
+  "action": {
+    "default_title": "Mở AutoDoc Pro"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "worker.js",
+        "libs/*"
+      ],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
