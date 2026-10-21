@@ -10,6 +10,26 @@ function getXLSX() {
   throw new Error("Thư viện SheetJS (XLSX) chưa được nạp.");
 }
 
+function filterSheetPreviewRows(rows) {
+  const headers = Object.keys(rows[0]);
+  const findColumn = name => headers.find(header => header.trim().toLowerCase() === name);
+  const checkKey = findColumn('check') || findColumn('check dl');
+  const selectionKeys = new Set([findColumn('check'), findColumn('check dl')]);
+  const hasData = row => Object.entries(row).some(([key, value]) =>
+    !selectionKeys.has(key) && key.trim().toLowerCase() !== 'stt'
+      && value !== null && value !== undefined && String(value).trim() !== ''
+  );
+  const filtered = rows.filter(row =>
+    hasData(row) && (!checkKey || String(row[checkKey] ?? '').trim().toLowerCase() === 'true')
+  );
+  if (!filtered.length) {
+    throw new Error(checkKey
+      ? `Không có dòng dữ liệu nào được chọn (${checkKey.trim()} = True) trong Google Sheet.`
+      : 'Google Sheet không có dòng dữ liệu nào có nội dung.');
+  }
+  return filtered;
+}
+
 export const GoogleSheetsManager = {
   extractFileId(url) {
     try {
@@ -79,19 +99,7 @@ export const GoogleSheetsManager = {
       throw new Error("Google Sheet không có dữ liệu hoặc không đúng cấu trúc bảng.");
     }
 
-    const firstRowKeys = Object.keys(rawData[0]);
-    const checkDLKey = firstRowKeys.find(k => k.toLowerCase().trim() === 'check dl');
-    if (checkDLKey) {
-      rawData = rawData.filter(row => {
-        const val = row[checkDLKey];
-        return val !== undefined && val !== null && val.toString().trim().toLowerCase() === 'true';
-      });
-      if (rawData.length === 0) {
-        throw new Error("Không có hàng dữ liệu nào có giá trị Check DL = 'True' trong Google Sheet.");
-      }
-    }
-
-    return rawData;
+    return filterSheetPreviewRows(rawData);
   },
 
   async importExcelLink(url, sheetName) {

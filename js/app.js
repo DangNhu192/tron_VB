@@ -1446,7 +1446,7 @@ async function initApp() {
         if (rawData && rawData.length > 0) {
           const firstRowKeys = Object.keys(rawData[0]);
           const checkDLKey = firstRowKeys.find(k => k.toLowerCase().trim() === 'check dl');
-          if (checkDLKey) {
+          if (checkDLKey && !loadedFromSheet) {
             rawData = rawData.filter(row => {
               const val = row[checkDLKey];
               return val !== undefined && val !== null && val.toString().trim().toLowerCase() === 'true';

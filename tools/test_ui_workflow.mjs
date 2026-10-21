@@ -142,7 +142,7 @@ try {
     if (authenticatedTab) assert.ok((await route.request().allHeaders()).cookie?.includes('autodoc_test_session=authorized'));
     await route.fulfill({ status: authenticatedTab ? 200 : sheetError || sheetRequests === 1 ? 403 : 200,
       contentType: 'text/csv; charset=utf-8', headers,
-      body: `Họ tên,Mã,Check DL\nDữ liệu mới ${sheetVersion},00123,TRUE` });
+      body: `Họ tên,Mã,Check,Check DL\nDữ liệu mới ${sheetVersion},00123,TRUE,FALSE\nKhông được chọn,002,FALSE,TRUE\n, ,TRUE,TRUE` });
   });
   await page.locator('[data-view="viewData"]').click();
   await page.locator('#dataSrcLinkBtn').click();
@@ -159,6 +159,7 @@ try {
   await page.locator('#processBtn').click();
   await page.locator('#dataPreviewModal.is-open').waitFor();
   assert.equal(await page.locator('.preview-input[data-col="Họ tên"]').inputValue(), 'Dữ liệu mới 2', 'Opening preview rereads the remote Sheet');
+  assert.equal(await page.locator('.preview-row').count(), 1, 'Preview includes only populated Check=True rows');
   assert.ok(await page.locator('#reloadSheetPreviewBtn').isVisible());
   sheetVersion = 3;
   await page.locator('#reloadSheetPreviewBtn').click();

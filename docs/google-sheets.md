@@ -31,7 +31,11 @@ quản trị viên đặt vẫn được tôn trọng.
 ## Bảo toàn dữ liệu
 
 Yêu cầu đọc bỏ cache phía trình duyệt. CSV được đọc như văn bản để giữ nguyên
-Unicode, mã có số 0 đầu và giá trị hiển thị. Bộ lọc `Check DL = TRUE` vẫn áp dụng.
+Unicode, mã có số 0 đầu và giá trị hiển thị. Bảng xem trước chỉ nhận dòng có
+nội dung. Nếu Sheet có cột `Check`, chỉ nhận dòng `Check = TRUE`; nếu không có
+`Check` nhưng có `Check DL`, dùng `Check DL = TRUE`. Hai cột cùng tồn tại thì
+ưu tiên `Check`. Dòng chỉ có dấu chọn hoặc số thứ tự `STT` mà không có dữ liệu
+cũng được bỏ qua.
 Cập nhật thất bại giữ nguyên bảng đang xem. Nếu bảng có chỉnh sửa cục bộ, cần
 lưu bản sao trước khi tải lại; nếu chỉnh sửa xảy ra trong lúc tải, kết quả mới
 không ghi đè các chỉnh sửa đó. Xuất sử dụng bản đã kiểm tra trong bảng xem trước.

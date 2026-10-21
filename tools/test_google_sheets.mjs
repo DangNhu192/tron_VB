@@ -108,6 +108,19 @@ try {
   assert.equal(first[0]['Họ tên'], 'Nguyễn Thị Hồng');
   assert.equal(first[0]['Mã'], '00123', 'CSV identifiers retain leading zeros');
   assert.equal(second[0]['Họ tên'], 'Dữ liệu mới', 'Saved links read live data, not a stored snapshot');
+  globalThis.fetch = async () => response('STT,Họ tên,Mã\r\n1,Nguyễn Thị Hồng,00123\r\n2,  ,  \r\n3,Lê Quốc Hùng,0');
+  const withoutCheck = await GoogleSheetsManager.importLinkSheet(link);
+  assert.deepEqual(withoutCheck.map(row => row['Họ tên']), ['Nguyễn Thị Hồng', 'Lê Quốc Hùng'], 'Without Check, only populated rows appear');
+
+  globalThis.fetch = async () => response('STT,Họ tên,Check,Ghi chú\r\n1,Nguyễn Thị Hồng,TRUE,có dữ liệu\r\n2,Lê Quốc Hùng,FALSE,bỏ qua\r\n3,Trần An, true ,chọn\r\n4,,TRUE,\r\n5,  ,TRUE,  ');
+  const withCheck = await GoogleSheetsManager.importLinkSheet(link);
+  assert.deepEqual(withCheck.map(row => row['Họ tên']), ['Nguyễn Thị Hồng', 'Trần An'], 'Check=True selects only populated rows');
+
+  globalThis.fetch = async () => response('Họ tên,Check,Check DL\r\nĐược chọn,TRUE,FALSE\r\nKhông chọn,FALSE,TRUE');
+  assert.deepEqual((await GoogleSheetsManager.importLinkSheet(link)).map(row => row['Họ tên']), ['Được chọn'], 'Check takes precedence when both selection columns exist');
+
+  globalThis.fetch = async () => response('Họ tên,Check\r\nLê Quốc Hùng,FALSE');
+  await assert.rejects(GoogleSheetsManager.importLinkSheet(link), /Check = True/, 'An unselected Sheet has no preview rows');
   assert.equal(GoogleSheetsManager.extractGid(link), '42');
   console.log('PASS: public/session fallback, account paths, hash gid, named/published tabs, login rejection, cache bypass, error classification, tab cleanup, Unicode and live rereads.');
 } finally {
